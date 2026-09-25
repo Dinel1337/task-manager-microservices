@@ -1,0 +1,17 @@
+# Dashboard provisioning config
+
+apiVersion: 1
+
+providers:
+  - name: 'Task Manager Dashboards'
+    orgId: 1
+    folder: 'Task Manager'
+    folderUid: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+
+
+

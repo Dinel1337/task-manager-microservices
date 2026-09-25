@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  analytics-service:
+    build: .
+    container_name: analytics-service
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_SCHEMA=analytics_service
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC_TASK_EVENTS=task.events
+      - KAFKA_CONSUMER_GROUP=analytics-service
+      - LOG_LEVEL=INFO
+      - PORT=8002
+    ports:
+      - "8002:8002"
+    networks:
+      - tasks
+    restart: unless-stopped
+
+networks:
+  tasks:
+    external: true

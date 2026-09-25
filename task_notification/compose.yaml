@@ -1,0 +1,46 @@
+services:
+
+  task-notification:
+    container_name: task-notification
+    image: task-notification:latest
+    platform: linux/amd64
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+    env_file:
+      - env/task-notification.env
+      - env/postgres.env
+      - env/rabbitmq.env
+      - env/redis.env
+    networks:
+      - tasks
+    ports:
+      - "127.0.0.1:8001:8001"
+    build:
+      context: .
+    pull_policy: build
+
+  notification-worker:
+    container_name: notification-worker
+    image: task-notification:latest
+    platform: linux/amd64
+    volumes:
+      - ./src:/app/src
+    env_file:
+      - env/task-notification.env
+      - env/postgres.env
+      - env/rabbitmq.env
+      - env/redis.env
+    networks:
+      - tasks
+    build:
+      context: .
+    pull_policy: build
+    command: ["arq", "arq_worker.WorkerSettings"]
+
+networks:
+  tasks:
+    external: true
+
+
+

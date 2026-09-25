@@ -1,0 +1,40 @@
+# Конфигурация Prometheus для Task Manager
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers: []
+
+rule_files: []
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Task Service metrics
+  - job_name: 'task-service'
+    static_configs:
+      - targets: ['task-service:8000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Task Notification Service metrics
+  - job_name: 'task-notification'
+    static_configs:
+      - targets: ['task-notification:8001']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Analytics Service metrics
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:8001']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+
+
