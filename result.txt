@@ -1,0 +1,5924 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/alembic/env.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+target_metadata = None
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/alembic/versions/001_init.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Init analytics schema.
+
+Revision ID: 001
+Revises: 
+Create Date: 2026-01-22
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = '001'
+down_revision: Union[str, None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    # Create schema
+    op.execute('CREATE SCHEMA IF NOT EXISTS analytics_service')
+    
+    # Create task_analytics table
+    op.create_table(
+        'task_analytics',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('event_id', sa.String(), nullable=False),
+        sa.Column('event_type', sa.String(), nullable=False),
+        sa.Column('task_id', sa.String(), nullable=False),
+        sa.Column('title', sa.String(), nullable=False),
+        sa.Column('description', sa.String(), nullable=True),
+        sa.Column('status', sa.String(), nullable=False),
+        sa.Column('user_id', sa.String(), nullable=True),
+        sa.Column('assignee', sa.String(), nullable=True),
+        sa.Column('priority', sa.String(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('processed_at', sa.DateTime(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        schema='analytics_service'
+    )
+    op.create_index('ix_task_analytics_event_id', 'task_analytics', ['event_id'], unique=True, schema='analytics_service')
+    op.create_index('ix_task_analytics_event_type', 'task_analytics', ['event_type'], schema='analytics_service')
+    op.create_index('ix_task_analytics_task_id', 'task_analytics', ['task_id'], schema='analytics_service')
+    op.create_index('ix_task_analytics_status', 'task_analytics', ['status'], schema='analytics_service')
+
+
+def downgrade() -> None:
+    op.drop_table('task_analytics', schema='analytics_service')
+    op.execute('DROP SCHEMA IF EXISTS analytics_service CASCADE')
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Analytics Service for Composer Task Manager."""
+
+__version__ = "0.1.0"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""API layer for Kafka consumer."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/app.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""FastAPI application."""
+
+from contextlib import asynccontextmanager
+
+from dishka.integrations.fastapi import setup_dishka
+from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from analytics_service.core.config import settings
+from analytics_service.core.providers.setup import container
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan."""
+    yield
+
+
+def create_app() -> FastAPI:
+    """Create FastAPI application."""
+    app = FastAPI(
+        title=settings.APP_NAME,
+        lifespan=lifespan,
+    )
+
+    # Setup Dishka DI
+    setup_dishka(container, app)
+
+    # Setup Prometheus metrics
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
+    # Health check endpoint
+    @app.get("/health")
+    async def health():
+        return {"status": "healthy"}
+
+    return app
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/core/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Core module containing configuration and providers."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/core/config.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Application settings."""
+
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    # Application
+    APP_NAME: str = "analytics-service"
+    ENV: str = "DEV"
+    LOG_LEVEL: str = "INFO"
+    PORT: int = 8002
+
+    # PostgreSQL
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: SecretStr
+    POSTGRES_SCHEMA: str = "analytics_service"
+
+    # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka:9092"
+    KAFKA_TOPIC_TASK_EVENTS: str = "task.events"
+    KAFKA_CONSUMER_GROUP: str = "analytics-service"
+
+    @property
+    def postgres_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+
+settings = Settings()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/core/logger.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Logging configuration."""
+
+import logging
+import sys
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get logger instance."""
+    logger = logging.getLogger(name)
+    
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    
+    return logger
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/core/providers/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Dependency injection providers."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/core/providers/setup.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Dishka DI providers."""
+
+from dishka import Provider, Scope, make_async_container, provide
+
+from analytics_service.core.config import settings
+from analytics_service.domain.use_cases.process_task_event import ProcessTaskEventUseCase
+from analytics_service.infrastructure.postgres.database import Database
+from analytics_service.infrastructure.postgres.repository import AnalyticsRepository
+
+
+class InfrastructureProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    def get_database(self) -> Database:
+        return Database(settings.postgres_url)
+
+
+class RepositoryProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_repository(self) -> AnalyticsRepository:
+        return AnalyticsRepository()
+
+
+class UseCaseProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_process_event(
+        self, database: Database, repository: AnalyticsRepository
+    ) -> ProcessTaskEventUseCase:
+        return ProcessTaskEventUseCase(database, repository)
+
+
+container = make_async_container(
+    InfrastructureProvider(),
+    RepositoryProvider(),
+    UseCaseProvider(),
+)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/domain/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Domain layer containing use cases."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/domain/metrics/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Metrics module."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/domain/metrics/registry.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Prometheus metrics registry."""
+
+from prometheus_client import Counter, Gauge
+
+
+class MetricsRegistry:
+    """Metrics registry for analytics service."""
+
+    def __init__(self) -> None:
+        """Initialize metrics."""
+        # Counter for processed events
+        self.events_processed_total = Counter(
+            "analytics_events_processed_total",
+            "Total number of events processed",
+            ["event_type"],
+        )
+
+        # Counter for failed events
+        self.events_failed_total = Counter(
+            "analytics_events_failed_total",
+            "Total number of events failed",
+            ["event_type"],
+        )
+
+        # Gauge for consumer lag
+        self.consumer_lag = Gauge(
+            "analytics_consumer_lag",
+            "Kafka consumer lag",
+            ["topic", "partition"],
+        )
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/domain/use_cases/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use cases (business logic)."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/domain/use_cases/process_task_event.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use case for processing task events."""
+
+from analytics_service.core.logger import get_logger
+from analytics_service.infrastructure.postgres.database import Database
+from analytics_service.infrastructure.postgres.repository import AnalyticsRepository
+from analytics_service.schemas.events import TaskEventSchema
+
+logger = get_logger(__name__)
+
+
+class ProcessTaskEventUseCase:
+    """Use case for processing task events from Kafka."""
+
+    def __init__(self, database: Database, repository: AnalyticsRepository):
+        self._database = database
+        self._repository = repository
+
+    async def execute(self, event: TaskEventSchema) -> None:
+        """Process task event."""
+        async with self._database.session() as session:
+            await self._repository.save_task_event(session, event)
+        
+        logger.info(f"Processed task event: {event.event_type} for task {event.payload.get('task_id')}")
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Infrastructure layer for external integrations."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/clickhouse/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""ClickHouse infrastructure."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/clickhouse/client.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""ClickHouse client manager."""
+
+import clickhouse_connect
+
+from analytics_service.core.config import ClickHouseSettings
+from analytics_service.core.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+class ClickHouseClient:
+    """ClickHouse client wrapper."""
+
+    def __init__(self, settings: ClickHouseSettings) -> None:
+        """Initialize ClickHouse client."""
+        self.settings = settings
+        self.client = None
+
+    async def start(self) -> None:
+        """Start ClickHouse client."""
+        self.client = clickhouse_connect.get_client(
+            host=self.settings.host,
+            port=self.settings.port,
+            database=self.settings.database,
+            username=self.settings.user,
+            password=self.settings.password or "",
+        )
+        
+        # Create table if not exists
+        self.client.command("""
+            CREATE TABLE IF NOT EXISTS task_analytics (
+                event_id String,
+                event_type String,
+                timestamp DateTime64(3),
+                task_id String,
+                title String,
+                description String,
+                status String,
+                user_id Nullable(String),
+                assignee Nullable(String),
+                priority Nullable(String),
+                created_at DateTime64(3),
+                updated_at DateTime64(3)
+            ) ENGINE = MergeTree()
+            ORDER BY (timestamp, task_id)
+        """)
+        
+        logger.info(f"ClickHouse client connected: {self.settings.host}:{self.settings.port}")
+
+    async def stop(self) -> None:
+        """Stop ClickHouse client."""
+        if self.client:
+            self.client.close()
+            logger.info("ClickHouse client closed")
+
+    def get_client(self):
+        """Get ClickHouse client."""
+        return self.client
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/clickhouse/repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""ClickHouse repository for analytics data."""
+
+import structlog
+from clickhouse_connect.driver import Client
+
+from analytics_service.schemas.analytics import TaskAnalyticsRecord
+
+logger = structlog.get_logger()
+
+
+class AnalyticsRepository:
+    """Repository for analytics data in ClickHouse."""
+
+    def __init__(self, client: Client) -> None:
+        """Initialize repository."""
+        self.client = client
+
+    async def save_task_analytics(self, record: TaskAnalyticsRecord) -> None:
+        """Save task analytics record to ClickHouse."""
+        try:
+            query = """
+            INSERT INTO task_analytics (
+                event_id,
+                event_type,
+                event_timestamp,
+                task_id,
+                task_title,
+                task_description,
+                task_status,
+                user_id,
+                task_created_at,
+                task_updated_at,
+                processing_timestamp
+            ) VALUES
+            """
+
+            data = [
+                [
+                    str(record.event_id),
+                    record.event_type.value,
+                    record.event_timestamp,
+                    str(record.task_id),
+                    record.task_title,
+                    record.task_description,
+                    record.task_status.value,
+                    str(record.user_id) if record.user_id else None,
+                    record.task_created_at,
+                    record.task_updated_at,
+                    record.processing_timestamp,
+                ]
+            ]
+
+            self.client.insert(
+                table="task_analytics",
+                data=data,
+                column_names=[
+                    "event_id",
+                    "event_type",
+                    "event_timestamp",
+                    "task_id",
+                    "task_title",
+                    "task_description",
+                    "task_status",
+                    "user_id",
+                    "task_created_at",
+                    "task_updated_at",
+                    "processing_timestamp",
+                ],
+            )
+
+            logger.info(
+                "Task analytics saved to ClickHouse",
+                event_id=str(record.event_id),
+                event_type=record.event_type.value,
+                task_id=str(record.task_id),
+            )
+
+        except Exception as e:
+            logger.error(
+                "Failed to save task analytics to ClickHouse",
+                event_id=str(record.event_id),
+                error=str(e),
+            )
+            raise
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/kafka/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/kafka/consumer.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Kafka consumer using pure aiokafka."""
+
+import json
+
+from aiokafka import AIOKafkaConsumer
+
+from analytics_service.core.config import settings
+from analytics_service.core.logger import get_logger
+from analytics_service.core.providers.setup import container
+from analytics_service.domain.use_cases.process_task_event import ProcessTaskEventUseCase
+from analytics_service.schemas.events import TaskEventSchema
+
+logger = get_logger(__name__)
+
+
+async def start_kafka_consumer():
+    """Start Kafka consumer using aiokafka."""
+    logger.info(f"🚀 Starting Kafka consumer: {settings.KAFKA_BOOTSTRAP_SERVERS}, topic: {settings.KAFKA_TOPIC_TASK_EVENTS}")
+    
+    consumer = AIOKafkaConsumer(
+        settings.KAFKA_TOPIC_TASK_EVENTS,
+        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+        group_id=settings.KAFKA_CONSUMER_GROUP,
+        auto_offset_reset='earliest',
+        enable_auto_commit=True,
+    )
+    
+    try:
+        await consumer.start()
+        logger.info(f"✅ Kafka consumer connected and ready!")
+        
+        async for msg in consumer:
+            try:
+                # Decode message
+                data = json.loads(msg.value.decode('utf-8'))
+                event = TaskEventSchema(**data)
+                
+                # Process event
+                async with container() as request_container:
+                    use_case = await request_container.get(ProcessTaskEventUseCase)
+                    await use_case.execute(event)
+                
+                logger.info(f"✅ Processed: {event.event_type}, task_id={event.payload.get('task_id')}, offset={msg.offset}")
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to process message: {e}", exc_info=True)
+                
+    except Exception as e:
+        logger.error(f"💥 Kafka consumer error: {e}", exc_info=True)
+    finally:
+        await consumer.stop()
+        logger.info("Kafka consumer stopped")
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/postgres/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/postgres/database.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""PostgreSQL database connection."""
+
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+
+class Database:
+    """Database connection manager."""
+
+    def __init__(self, url: str) -> None:
+        """Initialize database."""
+        self.engine = create_async_engine(url, echo=False, pool_pre_ping=True)
+        self.session_factory = async_sessionmaker(
+            self.engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+
+    @asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        """Get database session."""
+        async with self.session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/postgres/models.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""PostgreSQL models."""
+
+from datetime import datetime
+from uuid import UUID
+
+from sqlalchemy import DateTime, String
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    """Base model."""
+
+    pass
+
+
+class TaskAnalyticsModel(Base):
+    """Task analytics model."""
+
+    __tablename__ = "task_analytics"
+    __table_args__ = {"schema": "analytics_service"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[str] = mapped_column(String, unique=True, index=True)
+    event_type: Mapped[str] = mapped_column(String, index=True)
+    task_id: Mapped[str] = mapped_column(String, index=True)
+    title: Mapped[str] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, index=True)
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    assignee: Mapped[str | None] = mapped_column(String, nullable=True)
+    priority: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    processed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/infrastructure/postgres/repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Repository for task analytics."""
+
+from datetime import datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from analytics_service.core.logger import get_logger
+from analytics_service.infrastructure.postgres.models import TaskAnalyticsModel
+from analytics_service.schemas.events import TaskEventSchema
+
+logger = get_logger(__name__)
+
+
+class AnalyticsRepository:
+    """Repository for analytics data."""
+
+    async def save_task_event(
+        self, session: AsyncSession, event: TaskEventSchema
+    ) -> None:
+        """Save task event to database."""
+        payload = event.payload
+        
+        # Parse datetime fields
+        created_at = payload.get("created_at")
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
+        
+        updated_at = payload.get("updated_at")
+        if isinstance(updated_at, str):
+            updated_at = datetime.fromisoformat(updated_at)
+        
+        analytics = TaskAnalyticsModel(
+            event_id=event.event_id,
+            event_type=event.event_type,
+            task_id=payload.get("task_id"),
+            title=payload.get("title"),
+            description=payload.get("description"),
+            status=payload.get("status"),
+            user_id=payload.get("user_id"),
+            assignee=payload.get("metadata", {}).get("assignee"),
+            priority=payload.get("metadata", {}).get("priority"),
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        
+        session.add(analytics)
+        logger.info(f"✅ Saved task event to DB: {event.event_id}, task_id={payload.get('task_id')}")
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/main.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Main entry point."""
+
+import asyncio
+
+from analytics_service.app import create_app
+from analytics_service.core.config import settings
+from analytics_service.core.logger import get_logger
+from analytics_service.infrastructure.kafka.consumer import start_kafka_consumer
+
+logger = get_logger(__name__)
+
+
+async def main():
+    """Run the application."""
+    import uvicorn
+    
+    config = uvicorn.Config(
+        create_app(),
+        host="0.0.0.0",
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
+    server = uvicorn.Server(config)
+    
+    # Run Kafka consumer and FastAPI server in parallel
+    await asyncio.gather(
+        start_kafka_consumer(),
+        server.serve(),
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/schemas/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Pydantic schemas (DTOs)."""
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/schemas/analytics.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Analytics schemas for ClickHouse storage."""
+
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from analytics_service.schemas.events import TaskEventType, TaskStatus
+
+
+class TaskAnalyticsRecord(BaseModel):
+    """Task analytics record for ClickHouse."""
+
+    event_id: UUID
+    event_type: TaskEventType
+    event_timestamp: datetime
+    task_id: UUID
+    task_title: str
+    task_description: str | None = None
+    task_status: TaskStatus
+    user_id: UUID | None = None
+    task_created_at: datetime
+    task_updated_at: datetime
+    processing_timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        """Pydantic config."""
+
+        json_encoders = {
+            UUID: str,
+            datetime: lambda v: v.isoformat(),
+        }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./analytics-service/src/analytics_service/schemas/events.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Pydantic schemas for task events."""
+
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class TaskEventSchema(BaseModel):
+    """Task event from Kafka."""
+
+    event_id: str
+    event_type: str
+    timestamp: datetime
+    payload: dict[str, Any]
+    
+    @field_validator('payload', mode='before')
+    @classmethod
+    def parse_datetime_fields(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Parse datetime fields from ISO strings."""
+        datetime_fields = ['created_at', 'updated_at', 'timestamp']
+        for field in datetime_fields:
+            if field in v and isinstance(v[field], str):
+                try:
+                    v[field] = datetime.fromisoformat(v[field])
+                except (ValueError, TypeError):
+                    pass  # Keep as string if parsing fails
+        return v
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/alembic/env.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import asyncio
+import logging
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+from sqlalchemy.ext.asyncio import AsyncEngine
+from tenacity import before_sleep_log, retry, wait_exponential
+
+from task_service.core.config import settings
+from task_service.infrastructure.postgres.base import Base
+from task_service.infrastructure.postgres.models import Task  # noqa: F401
+
+CREATE_SCHEMA_QUERY = f"CREATE SCHEMA IF NOT EXISTS {settings.POSTGRES_SCHEMA};"
+
+config = context.config
+logger = logging.getLogger(__name__)
+
+target_metadata = Base.metadata
+
+config.set_main_option("sqlalchemy.url", settings.postgres_url)
+
+
+def filter_foreign_schemas(name, type_, parent_names):
+    return type_ != "schema" or name == settings.POSTGRES_SCHEMA
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table_schema=settings.POSTGRES_SCHEMA,
+        include_schemas=True,
+        include_name=filter_foreign_schemas,
+    )
+
+    with context.begin_transaction():
+        context.execute(CREATE_SCHEMA_QUERY)
+        context.run_migrations()
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.ERROR),
+)
+async def run_migrations_online(engine: AsyncEngine):
+    """Run migrations in 'online' mode."""
+    async with engine.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    connectable = AsyncEngine(
+        engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+            future=True,
+        ),
+    )
+
+    asyncio.run(run_migrations_online(connectable))
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/alembic/versions/001_init_tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""init tasks table
+
+Revision ID: 001
+Revises:
+Create Date: 2024-01-01 00:00:00.000000
+
+"""
+from typing import Sequence, Union
+
+import sqlalchemy as sa
+from alembic import op
+
+from task_service.core.config import settings
+
+revision: str = "001"
+down_revision: Union[str, None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    op.create_table(
+        "tasks",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("title", sa.String(255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("status", sa.String(50), server_default="todo", nullable=False),
+        sa.Column("priority", sa.String(50), server_default="medium", nullable=False),
+        sa.Column("assignee", sa.String(100), nullable=True),
+        sa.Column("created_by", sa.String(100), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("timezone('UTC', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("timezone('UTC', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column("due_date", sa.DateTime(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        schema=settings.POSTGRES_SCHEMA,
+    )
+
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_tasks_title",
+        "tasks",
+        ["title"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_tasks_assignee",
+        "tasks",
+        ["assignee"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_tasks_status",
+        "tasks",
+        ["status"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    op.drop_index(f"ix_{settings.POSTGRES_SCHEMA}_tasks_status", table_name="tasks", schema=settings.POSTGRES_SCHEMA)
+    op.drop_index(f"ix_{settings.POSTGRES_SCHEMA}_tasks_assignee", table_name="tasks", schema=settings.POSTGRES_SCHEMA)
+    op.drop_index(f"ix_{settings.POSTGRES_SCHEMA}_tasks_title", table_name="tasks", schema=settings.POSTGRES_SCHEMA)
+    op.drop_table("tasks", schema=settings.POSTGRES_SCHEMA)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/main.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import asyncio
+
+from uvicorn import Config, Server
+
+from task_service.app import create_app
+from task_service.core.config import settings
+from task_service.core.logger import get_logger, setup_logging
+
+setup_logging()
+logger = get_logger(__name__)
+
+app = create_app()
+
+
+async def run() -> None:
+    """Запуск сервера."""
+    logger.info("Starting Task Service...")
+
+    config = Config(
+        app,
+        host="0.0.0.0",
+        port=settings.PORT,
+    )
+    server = Server(config)
+    await server.serve()
+
+
+if __name__ == "__main__":
+    asyncio.run(run())
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/depends.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Зависимости для API."""
+
+from fastapi import Header
+
+from task_service.schemas.auth import AccessTokenData
+
+
+async def get_current_user(
+    x_user_name: str = Header(default="anonymous"),
+    x_user_id: int | None = Header(default=None),
+) -> AccessTokenData:
+    """
+    Получить текущего пользователя из заголовков.
+    
+    В реальном проекте здесь была бы валидация JWT токена.
+    """
+    return AccessTokenData(username=x_user_name, user_id=x_user_id)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/health_check/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/health_check/health_check_router.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+health_check_router = APIRouter(tags=["Health check"])
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+
+
+@health_check_router.get("/health", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
+    """Проверка здоровья сервиса."""
+    return HealthResponse(status="healthy", service="task-service")
+
+
+@health_check_router.get("/ready", response_model=HealthResponse)
+async def readiness_check() -> HealthResponse:
+    """Проверка готовности сервиса."""
+    return HealthResponse(status="ready", service="task-service")
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/metrics.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from dishka import FromDishka
+from dishka.integrations.fastapi import inject
+from fastapi import APIRouter
+from prometheus_client import generate_latest
+from starlette.responses import Response
+
+from task_service.domain.metrics.registry_metrics import instrumentator, task_service_registry
+from task_service.domain.metrics.use_case import GetTasksMetricsUseCase
+
+metrics_router = APIRouter()
+
+
+@metrics_router.get("/metrics", include_in_schema=False)
+@inject
+async def metrics(use_case: FromDishka[GetTasksMetricsUseCase]) -> Response:
+    await use_case.execute()
+    return Response(
+        content=generate_latest(task_service_registry) + generate_latest(instrumentator.registry),
+        media_type="text/plain",
+    )
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/api/tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from dishka import FromDishka
+from dishka.integrations.fastapi import inject
+from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
+
+from task_service.api.depends import get_current_user
+from task_service.core.exceptions.tasks import TaskNotFoundException
+from task_service.core.logger import get_logger, log
+from task_service.domain.use_cases.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.delete_task import DeleteTaskUseCase
+from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.update_task import UpdateTaskUseCase
+from task_service.schemas.api.pagination import Pagination
+from task_service.schemas.api.tasks import (
+    CreateTaskRequestPayload,
+    TaskResponse,
+    TasksRequest,
+    UpdateTaskRequestPayload,
+)
+from task_service.schemas.auth import AccessTokenData
+from task_service.schemas.task import CreateTask, TaskFilters, UpdateTask
+
+logger = get_logger(__name__)
+
+tasks_router = APIRouter(prefix="/tasks")
+
+
+@tasks_router.get(
+    "",
+    response_model=Pagination[TaskResponse],
+)
+@inject
+@log(logger)
+async def get_all_tasks(
+    use_case: FromDishka[GetTasksUseCase],
+    request: TasksRequest = Depends(),
+) -> Pagination[TaskResponse]:
+    """Получить список задач с фильтрацией и пагинацией."""
+    try:
+        records, total = await use_case.execute(
+            filters=TaskFilters.model_validate(request.model_dump()),
+        )
+        return Pagination(limit=request.limit, offset=request.offset, items=records, total=total)
+    except Exception as e:
+        logger.error(f"Error getting tasks: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@tasks_router.get(
+    "/{task_id}",
+    response_model=TaskResponse,
+)
+@inject
+@log(logger)
+async def get_task(
+    task_id: int,
+    use_case: FromDishka[GetTasksUseCase],
+) -> TaskResponse:
+    """Получить задачу по ID."""
+    try:
+        return TaskResponse.model_validate(await use_case.get_by_id(task_id))
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@tasks_router.post(
+    "",
+    response_model=TaskResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+@inject
+@log(logger)
+async def create_task(
+    use_case: FromDishka[CreateTaskUseCase],
+    payload: CreateTaskRequestPayload,
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> TaskResponse:
+    """Создать новую задачу."""
+    try:
+        return TaskResponse.model_validate(
+            await use_case.execute(
+                task=CreateTask(created_by=current_user.username, **payload.model_dump()),
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error creating task: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@tasks_router.put(
+    "/{task_id}",
+    response_model=TaskResponse,
+)
+@inject
+@log(logger)
+async def update_task(
+    payload: UpdateTaskRequestPayload,
+    task_id: int,
+    use_case: FromDishka[UpdateTaskUseCase],
+    current_user: AccessTokenData = Depends(get_current_user),
+) -> TaskResponse:
+    """Обновить задачу."""
+    try:
+        return TaskResponse.model_validate(
+            await use_case.execute(
+                task=UpdateTask.model_validate(payload.model_dump(exclude_unset=True)),
+                task_id=task_id,
+                updated_by=current_user.username,
+            )
+        )
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@tasks_router.delete(
+    "/{task_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@inject
+@log(logger)
+async def delete_task(
+    task_id: int,
+    use_case: FromDishka[DeleteTaskUseCase],
+) -> None:
+    """Удалить задачу по ID."""
+    try:
+        await use_case.execute(task_id=task_id)
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/app.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from contextlib import asynccontextmanager
+
+from dishka.integrations.fastapi import setup_dishka
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+from task_service.api.health_check.health_check_router import health_check_router
+from task_service.api.metrics import metrics_router
+from task_service.api.tasks import tasks_router
+from task_service.core.config import settings
+from task_service.core.providers.setup import container
+from task_service.domain.metrics.registry_metrics import setup_metrics
+from task_service.infrastructure.rabbitmq.broker import broker
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan для подключения/отключения RabbitMQ broker."""
+    await broker.connect()
+    yield
+    await broker.close()
+
+
+def create_app() -> FastAPI:
+    """Создание приложения FastAPI."""
+    app = FastAPI(
+        title="Task Service",
+        description="Сервис управления задачами",
+        version="0.1.0",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
+        root_path=settings.ROOT_PATH,
+        lifespan=lifespan,
+    )
+
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Роутеры
+    app.include_router(tasks_router, prefix="/api/v1", tags=["Tasks"])
+    app.include_router(health_check_router)
+    app.include_router(metrics_router)
+
+    # DI контейнер
+    setup_dishka(container, app)
+
+    # Метрики
+    setup_metrics(app)
+
+    return app
+
+
+app = create_app()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/config.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    # Application
+    APP_NAME: str = "task-service"
+    ENV: str = "DEV"
+    LOG_LEVEL: str = "INFO"
+    PORT: int = 8000
+    ROOT_PATH: str = ""
+
+    # PostgreSQL
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: SecretStr
+    POSTGRES_SCHEMA: str = "task_service"
+    MIN_POOL_SIZE: int = 5
+    MAX_POOL_SIZE: int = 10
+
+    # RabbitMQ
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: SecretStr
+    RABBITMQ_PASSWORD: SecretStr
+    RABBITMQ_EXCHANGE: str = "tasks"
+    RABBITMQ_ROUTING_KEY: str = "task.notification"
+
+    # Redis
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_USERNAME: str | None = None
+    REDIS_PASSWORD: str | None = None
+    REDIS_CACHE_TTL: int = 300  # 5 минут
+
+    # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka:9092"
+    KAFKA_TOPIC_TASK_EVENTS: str = "task.events"
+    KAFKA_ENABLED: bool = True
+
+    @property
+    def postgres_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    @property
+    def rabbitmq_url(self) -> str:
+        return (
+            f"amqp://{self.RABBITMQ_USER.get_secret_value()}:{self.RABBITMQ_PASSWORD.get_secret_value()}"
+            f"@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+        )
+
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+
+
+settings = Settings()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/exceptions/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/exceptions/base.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+
+class BaseServiceException(Exception):
+    """Базовое исключение сервиса."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class EntityNotFoundException(BaseServiceException):
+    """Сущность не найдена."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "{entity} с id={entity_id} не найден"
+
+    def __init__(self, entity: str, entity_id: int) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(entity=entity, entity_id=entity_id)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/exceptions/rabbitmq.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+from task_service.core.exceptions.base import BaseServiceException
+
+
+class RabbitMQConnectionError(BaseServiceException):
+    """Ошибка подключения к RabbitMQ."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Не удалось подключиться к RabbitMQ: {detail}"
+
+    def __init__(self, detail: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(detail=detail)
+        super().__init__(self.message)
+
+
+class RabbitMQPublishError(BaseServiceException):
+    """Ошибка публикации сообщения."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Не удалось опубликовать сообщение: {detail}"
+
+    def __init__(self, detail: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(detail=detail)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/exceptions/tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+from task_service.core.exceptions.base import BaseServiceException, EntityNotFoundException
+
+
+class TaskNotFoundException(EntityNotFoundException):
+    """Задача не найдена."""
+
+    def __init__(self, task_id: int) -> None:
+        super().__init__(entity="Task", entity_id=task_id)
+
+
+class TaskValidationError(BaseServiceException):
+    """Ошибка валидации задачи."""
+    pass
+
+
+class TaskOperationError(BaseServiceException):
+    """Ошибка операции над задачей."""
+    pass
+
+
+class TaskAlreadyExistsError(BaseServiceException):
+    """Задача уже существует."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Задача с названием '{title}' уже существует"
+
+    def __init__(self, title: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(title=title)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/logger.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import logging
+import sys
+from functools import wraps
+from typing import Any, Awaitable, Callable, TypeVar, Union
+
+from task_service.core.config import settings
+
+LOG_COLORS = {
+    logging.DEBUG: "\033[36m",  # Cyan
+    logging.INFO: "\033[32m",  # Green
+    logging.WARNING: "\033[33m",  # Yellow
+    logging.ERROR: "\033[31m",  # Red
+    logging.CRITICAL: "\033[35m",  # Magenta
+}
+
+RESET_COLOR = "\033[0m"
+
+FuncType = TypeVar("FuncType", bound=Callable[..., Union[Any, Awaitable[Any]]])
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        log_color = LOG_COLORS.get(record.levelno, "")
+        record.msg = f"{log_color}{record.msg}{RESET_COLOR}"
+        return super().format(record)
+
+
+def is_coroutine_function(func: Callable[..., Any]) -> bool:
+    return bool(func.__code__.co_flags & 0x80)
+
+
+def setup_logging() -> None:
+    """Настройка базового логирования."""
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    
+    # Настраиваем root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    
+    # Убираем все существующие handlers
+    root_logger.handlers.clear()
+    
+    # Добавляем наш colored handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(
+        ColoredFormatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
+    )
+    root_logger.addHandler(console_handler)
+
+
+def get_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.propagate = True  # Используем root logger
+    return logger
+
+
+async def _async_log_execution(
+    logger: logging.Logger,
+    func: Callable[..., Awaitable[Any]],
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    try:
+        result = await func(*args, **kwargs)
+        logger.info(f"Successfully executed {func.__name__}")
+        return result
+    except Exception as error:
+        logger.error(f"Error in {func.__name__}: {error}")
+        raise error
+
+
+def _sync_log_execution(
+    logger: logging.Logger,
+    func: Callable[..., Any],
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    try:
+        result = func(*args, **kwargs)
+        logger.info(f"Successfully executed {func.__name__}")
+        return result
+    except Exception as error:
+        logger.error(f"Error in {func.__name__}: {error}")
+        raise error
+
+
+def log(logger: logging.Logger) -> Callable[[FuncType], FuncType]:
+    def decorator(func: FuncType) -> FuncType:
+        if is_coroutine_function(func):
+
+            @wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return await _async_log_execution(logger, func, *args, **kwargs)
+
+            return async_wrapper  # type: ignore
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return _sync_log_execution(logger, func, *args, **kwargs)
+
+            return sync_wrapper  # type: ignore
+
+    return decorator
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/providers/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/core/providers/setup.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import AsyncIterator
+
+from dishka import Provider, Scope, make_async_container, provide
+from faststream.rabbit import RabbitBroker
+from redis.asyncio import Redis
+
+from task_service.core.config import settings
+from task_service.domain.metrics.use_case import GetTasksMetricsUseCase
+from task_service.domain.use_cases.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.delete_task import DeleteTaskUseCase
+from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.update_task import UpdateTaskUseCase
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.rabbitmq.broker import broker
+from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
+from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.kafka.publisher import KafkaPublisher
+
+
+class InfrastructureProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    def get_database(self) -> Database:
+        return Database(settings.postgres_url)
+
+    @provide
+    def get_rabbit_broker(self) -> RabbitBroker:
+        return broker
+
+    @provide
+    async def get_redis(self) -> AsyncIterator[Redis]:
+        redis = Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
+            username=settings.REDIS_USERNAME,
+            password=settings.REDIS_PASSWORD,
+            decode_responses=True,
+        )
+        yield redis
+        await redis.aclose()
+
+    @provide
+    async def get_kafka_publisher(self) -> AsyncIterator[KafkaPublisher]:
+        publisher = KafkaPublisher(
+            bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+            topic=settings.KAFKA_TOPIC_TASK_EVENTS,
+            enabled=settings.KAFKA_ENABLED,
+        )
+        await publisher.start()
+        yield publisher
+        await publisher.stop()
+
+
+class RepositoryProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_task_repository(self) -> TaskRepository:
+        return TaskRepository()
+
+    @provide
+    def get_redis_repository(self) -> RedisRepository:
+        return RedisRepository()
+
+
+class ServiceProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_rabbitmq_publisher(self, broker: RabbitBroker) -> RabbitMQPublisher:
+        return RabbitMQPublisher(broker)
+
+
+class UseCaseProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_create_task(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        publisher: RabbitMQPublisher,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> CreateTaskUseCase:
+        return CreateTaskUseCase(database, repository, publisher, cache, kafka_publisher)
+
+    @provide
+    def get_get_tasks(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        cache: RedisRepository,
+    ) -> GetTasksUseCase:
+        return GetTasksUseCase(database, repository, cache)
+
+    @provide
+    def get_update_task(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        publisher: RabbitMQPublisher,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> UpdateTaskUseCase:
+        return UpdateTaskUseCase(database, repository, publisher, cache, kafka_publisher)
+
+    @provide
+    def get_delete_task(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> DeleteTaskUseCase:
+        return DeleteTaskUseCase(database, repository, cache, kafka_publisher)
+
+
+class MetricsProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_tasks_metrics(
+        self,
+        database: Database,
+        repository: TaskRepository,
+    ) -> GetTasksMetricsUseCase:
+        return GetTasksMetricsUseCase(database, repository)
+
+
+container = make_async_container(
+    InfrastructureProvider(),
+    RepositoryProvider(),
+    ServiceProvider(),
+    UseCaseProvider(),
+    MetricsProvider(),
+)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/metrics/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/metrics/registry_metrics.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from fastapi import FastAPI
+from prometheus_client import CollectorRegistry, Counter, Gauge
+from prometheus_fastapi_instrumentator import Instrumentator
+
+task_service_registry = CollectorRegistry()
+
+instrumentator = Instrumentator()
+
+# === Бизнес-метрики ===
+TASKS_CREATED = Counter(
+    "task_service_tasks_created_total",
+    "Total number of tasks created",
+    registry=task_service_registry,
+)
+TASKS_UPDATED = Counter(
+    "task_service_tasks_updated_total",
+    "Total number of tasks updated",
+    registry=task_service_registry,
+)
+TASKS_DELETED = Counter(
+    "task_service_tasks_deleted_total",
+    "Total number of tasks deleted",
+    registry=task_service_registry,
+)
+
+# === Gauge метрики ===
+TASKS_TOTAL = Gauge(
+    "task_service_tasks_total",
+    "Current total number of tasks",
+    registry=task_service_registry,
+)
+TASKS_BY_STATUS = Gauge(
+    "task_service_tasks_by_status",
+    "Current number of tasks by status",
+    ["status"],
+    registry=task_service_registry,
+)
+TASKS_BY_PRIORITY = Gauge(
+    "task_service_tasks_by_priority",
+    "Current number of tasks by priority",
+    ["priority"],
+    registry=task_service_registry,
+)
+
+
+def setup_metrics(app: FastAPI) -> None:
+    instrumentator.instrument(app)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/metrics/use_case.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_service.domain.metrics.registry_metrics import (
+    TASKS_BY_PRIORITY,
+    TASKS_BY_STATUS,
+    TASKS_TOTAL,
+)
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+
+
+class GetTasksMetricsUseCase:
+    """Use case для обновления метрик задач."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: TaskRepository,
+    ) -> None:
+        self._database = database
+        self._repository = repository
+
+    async def execute(self) -> None:
+        """Обновить все gauge метрики."""
+        async with self._database.session() as session:
+            # Общее количество
+            total = await self._repository.get_total_tasks_count(session)
+            TASKS_TOTAL.set(total)
+
+            # По статусам
+            status_counts = await self._repository.get_tasks_count_by_status(session)
+            for status_value, count in status_counts.items():
+                TASKS_BY_STATUS.labels(status=status_value).set(count)
+
+            # По приоритетам
+            priority_counts = await self._repository.get_tasks_count_by_priority(session)
+            for priority_value, count in priority_counts.items():
+                TASKS_BY_PRIORITY.labels(priority=priority_value).set(count)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/use_cases/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/use_cases/create_task.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_service.core.logger import get_logger, log
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
+from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.kafka.publisher import KafkaPublisher
+from task_service.schemas.task import (
+    CreateTask,
+    TaskEventType,
+    TaskNotificationMessage,
+    TaskSchema,
+)
+
+logger = get_logger(__name__)
+
+
+class CreateTaskUseCase:
+    """Use case для создания задачи."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        publisher: RabbitMQPublisher,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ):
+        self._database = database
+        self._repository = repository
+        self._publisher = publisher
+        self._cache = cache
+        self._kafka_publisher = kafka_publisher
+
+    @log(logger)
+    async def execute(self, task: CreateTask) -> TaskSchema:
+        """Создать задачу и отправить уведомление."""
+        async with self._database.session() as session:
+            created_task = await self._repository.create_task(session, task)
+
+        # Сохраняем в кэш
+        await self._cache.set_task(created_task)
+
+        # Отправляем уведомление в RabbitMQ (для нотификаций)
+        notification = TaskNotificationMessage(
+            task_id=created_task.id,
+            event_type=TaskEventType.CREATED,
+            task_title=created_task.title,
+            task_description=created_task.description,
+            assignee=created_task.assignee,
+            status=created_task.status,
+            priority=created_task.priority,
+            created_by=created_task.created_by,
+        )
+        await self._publisher.publish_task_notification(notification)
+
+        # Отправляем событие в Kafka (для аналитики)
+        await self._kafka_publisher.publish_task_event(created_task, TaskEventType.CREATED)
+
+        logger.info(f"Task created: id={created_task.id}, title={created_task.title}")
+        return created_task
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/use_cases/delete_task.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_service.core.logger import get_logger, log
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.kafka.publisher import KafkaPublisher
+from task_service.schemas.task import TaskEventType
+
+logger = get_logger(__name__)
+
+
+class DeleteTaskUseCase:
+    """Use case для удаления задач."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> None:
+        self._database = database
+        self._repository = repository
+        self._cache = cache
+        self._kafka_publisher = kafka_publisher
+
+    @log(logger)
+    async def execute(self, task_id: int) -> None:
+        """Удалить задачу по ID."""
+        async with self._database.session() as session:
+            # Получаем задачу перед удалением для события в Kafka
+            task = await self._repository.get_one_task(session, task_id)
+            await self._repository.delete_task(session, task_id)
+
+        # Удаляем из кэша
+        await self._cache.delete_task(task_id)
+
+        # Отправляем событие в Kafka (для аналитики)
+        await self._kafka_publisher.publish_task_event(task, TaskEventType.DELETED)
+
+        logger.info(f"Task deleted: id={task_id}")
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/use_cases/get_tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_service.core.logger import get_logger, log
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.schemas.task import TaskFilters, TaskSchema
+
+logger = get_logger(__name__)
+
+
+class GetTasksUseCase:
+    """Use case для получения задач."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        cache: RedisRepository,
+    ) -> None:
+        self._database = database
+        self._repository = repository
+        self._cache = cache
+
+    @log(logger)
+    async def execute(
+        self,
+        filters: TaskFilters,
+    ) -> tuple[list[TaskSchema], int]:
+        """Получить список задач с фильтрацией."""
+        async with self._database.session() as session:
+            return await self._repository.get_all_tasks(session=session, filters=filters)
+
+    @log(logger)
+    async def get_by_id(self, task_id: int) -> TaskSchema:
+        """Получить задачу по ID (с кэшированием)."""
+        # Пробуем получить из кэша
+        cached = await self._cache.get_task(task_id)
+        if cached:
+            logger.debug(f"Cache hit: task {task_id}")
+            return cached
+
+        # Получаем из БД
+        async with self._database.session() as session:
+            task = await self._repository.get_one_task(session, task_id)
+
+        # Сохраняем в кэш
+        await self._cache.set_task(task)
+        logger.debug(f"Cache miss: task {task_id}")
+
+        return task
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/domain/use_cases/update_task.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_service.core.logger import get_logger, log
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
+from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.kafka.publisher import KafkaPublisher
+from task_service.schemas.task import (
+    TaskEventType,
+    TaskNotificationMessage,
+    TaskSchema,
+    UpdateTask,
+)
+
+logger = get_logger(__name__)
+
+
+class UpdateTaskUseCase:
+    """Use case для обновления задачи."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        publisher: RabbitMQPublisher,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> None:
+        self._database = database
+        self._repository = repository
+        self._publisher = publisher
+        self._cache = cache
+        self._kafka_publisher = kafka_publisher
+
+    @log(logger)
+    async def execute(
+        self,
+        task: UpdateTask,
+        task_id: int,
+        updated_by: str,
+    ) -> TaskSchema:
+        """Обновить задачу и отправить уведомление."""
+        async with self._database.session() as session:
+            # Получаем старую задачу для сравнения
+            old_task = await self._repository.get_one_task(session, task_id)
+
+            updated_task = await self._repository.update_task(session, task_id, task)
+
+        # Обновляем кэш
+        await self._cache.delete_task(task_id)
+        await self._cache.set_task(updated_task)
+
+        # Определяем тип события
+        event_type = TaskEventType.UPDATED
+        if task.status and old_task.status != task.status:
+            event_type = TaskEventType.STATUS_CHANGED
+        elif task.assignee and old_task.assignee != task.assignee:
+            event_type = TaskEventType.ASSIGNED
+
+        # Отправляем уведомление в RabbitMQ (для нотификаций)
+        notification = TaskNotificationMessage(
+            task_id=updated_task.id,
+            event_type=event_type,
+            task_title=updated_task.title,
+            task_description=updated_task.description,
+            assignee=updated_task.assignee,
+            status=updated_task.status,
+            priority=updated_task.priority,
+            created_by=updated_by,
+        )
+        await self._publisher.publish_task_notification(notification)
+
+        # Отправляем событие в Kafka (для аналитики)
+        await self._kafka_publisher.publish_task_event(updated_task, event_type)
+
+        logger.info(f"Task updated: id={updated_task.id}, event={event_type}")
+        return updated_task
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/kafka/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/kafka/publisher.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Kafka publisher for task events."""
+
+import json
+from datetime import datetime
+from uuid import uuid4
+
+from aiokafka import AIOKafkaProducer
+
+from task_service.core.logger import get_logger
+from task_service.schemas.task import TaskEventType, TaskSchema
+
+logger = get_logger(__name__)
+
+
+class KafkaPublisher:
+    """Publisher for sending task events to Kafka."""
+
+    def __init__(self, bootstrap_servers: str, topic: str, enabled: bool = True) -> None:
+        """Initialize Kafka publisher."""
+        self.bootstrap_servers = bootstrap_servers
+        self.topic = topic
+        self.enabled = enabled
+        self.producer: AIOKafkaProducer | None = None
+
+    async def start(self) -> None:
+        """Start Kafka producer."""
+        if not self.enabled:
+            logger.info("Kafka publisher disabled")
+            return
+
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.bootstrap_servers,
+            value_serializer=lambda v: v.encode("utf-8"),
+        )
+        await self.producer.start()
+        logger.info(f"Kafka producer started: {self.bootstrap_servers}")
+
+    async def stop(self) -> None:
+        """Stop Kafka producer."""
+        if self.producer:
+            await self.producer.stop()
+            logger.info("Kafka producer stopped")
+
+    async def publish_task_event(
+        self, task: TaskSchema, event_type: TaskEventType
+    ) -> None:
+        """Publish task event to Kafka."""
+        if not self.enabled:
+            return
+
+        if not self.producer:
+            logger.error("Kafka producer not started")
+            return
+
+        try:
+            event = {
+                "event_id": str(uuid4()),
+                "event_type": event_type.value,
+                "timestamp": datetime.utcnow().isoformat(),
+                "payload": {
+                    "task_id": str(task.id),
+                    "title": task.title,
+                    "description": task.description,
+                    "status": task.status.value,
+                    "user_id": str(task.created_by) if task.created_by else None,
+                    "created_at": task.created_at.isoformat(),
+                    "updated_at": task.updated_at.isoformat(),
+                    "metadata": {
+                        "assignee": task.assignee,
+                        "priority": task.priority.value if task.priority else None,
+                    },
+                },
+            }
+
+            await self.producer.send_and_wait(
+                self.topic,
+                value=json.dumps(event),
+                key=str(task.id).encode("utf-8"),
+            )
+
+            logger.info(
+                f"Task event published to Kafka: task_id={task.id}, "
+                f"event_type={event_type.value}, topic={self.topic}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Failed to publish task event to Kafka: task_id={task.id}, "
+                f"event_type={event_type.value}, error={e}"
+            )
+            # Don't raise - Kafka is for analytics, not critical path
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/postgres/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/postgres/base.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from sqlalchemy.orm import DeclarativeBase
+
+from task_service.core.config import settings
+
+
+class Base(DeclarativeBase):
+    __table_args__ = {"schema": settings.POSTGRES_SCHEMA}
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/postgres/database.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from task_service.core.config import settings
+
+
+class Database:
+    def __init__(self, url: str) -> None:
+        self._engine = create_async_engine(
+            url,
+            pool_size=settings.MIN_POOL_SIZE,
+            max_overflow=settings.MAX_POOL_SIZE - settings.MIN_POOL_SIZE,
+            pool_pre_ping=True,
+        )
+        self._session_factory = async_sessionmaker(
+            bind=self._engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+
+    @asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        session = self._session_factory()
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+    async def close(self) -> None:
+        await self._engine.dispose()
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/postgres/models.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+
+from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from task_service.infrastructure.postgres.base import Base
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default="todo",
+        server_default="todo",
+    )
+    priority: Mapped[str] = mapped_column(
+        String(50),
+        default="medium",
+        server_default="medium",
+    )
+    assignee: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    created_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
+        onupdate=func.timezone("UTC", func.current_timestamp()),
+    )
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/postgres/repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from typing import Type
+
+from sqlalchemy import and_, delete, func, insert, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from task_service.core.exceptions.tasks import TaskNotFoundException
+from task_service.core.logger import get_logger, log
+from task_service.infrastructure.postgres.models import Task
+from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask
+
+logger = get_logger(__name__)
+
+
+class TaskRepository:
+    """Репозиторий для работы с задачами."""
+
+    _tasks_collection: Type[Task] = Task
+
+    @log(logger)
+    async def get_one_task(
+        self,
+        session: AsyncSession,
+        task_id: int,
+    ) -> TaskSchema:
+        query = select(self._tasks_collection).where(self._tasks_collection.id == task_id)
+        db_row = await session.scalar(query)
+        if not db_row:
+            raise TaskNotFoundException(task_id)
+        return TaskSchema.model_validate(db_row)
+
+    @log(logger)
+    async def get_all_tasks(
+        self,
+        session: AsyncSession,
+        filters: TaskFilters,
+    ) -> tuple[list[TaskSchema], int]:
+        query_filters = self._build_filters(filters)
+
+        query = (
+            select(self._tasks_collection)
+            .where(and_(*query_filters))
+            .limit(filters.limit)
+            .offset(filters.offset)
+            .order_by(self._tasks_collection.created_at.desc())
+        )
+
+        db_rows = await session.scalars(query)
+
+        count_query = select(func.count(self._tasks_collection.id.distinct())).where(and_(*query_filters))
+        total = await session.scalar(count_query)
+
+        #list comprehension
+        return [TaskSchema.model_validate(obj=obj) for obj in db_rows.all()], total or 0
+
+    @log(logger)
+    async def create_task(
+        self,
+        session: AsyncSession,
+        task: CreateTask,
+    ) -> TaskSchema:
+        values = task.model_dump()
+        query = insert(self._tasks_collection).values(values).returning(self._tasks_collection)
+        result = await session.scalar(query)
+        await session.flush()
+        return TaskSchema.model_validate(result)
+
+    @log(logger)
+    async def update_task(
+        self,
+        session: AsyncSession,
+        task_id: int,
+        task: UpdateTask,
+    ) -> TaskSchema:
+        values = task.model_dump(exclude_unset=True, exclude_none=True)
+        values["updated_at"] = datetime.utcnow()
+
+        query = (
+            update(self._tasks_collection)
+            .where(self._tasks_collection.id == task_id)
+            .values(values)
+            .returning(self._tasks_collection)
+        )
+
+        result = await session.scalar(query)
+
+        if result is None:
+            raise TaskNotFoundException(task_id)
+
+        await session.flush()
+
+        return TaskSchema.model_validate(result)
+
+    @log(logger)
+    async def delete_task(
+        self,
+        session: AsyncSession,
+        task_id: int,
+    ) -> None:
+        query = delete(self._tasks_collection).where(self._tasks_collection.id == task_id)
+
+        result = await session.execute(query)
+
+        if result.rowcount == 0:
+            raise TaskNotFoundException(task_id)
+
+        await session.flush()
+
+    def _build_filters(self, filters: TaskFilters) -> list:
+        """Построить фильтры для запроса."""
+        filters_list = []
+
+        if filters.search:
+            search_pattern = f"%{filters.search}%"
+            filters_list.append(
+                or_(
+                    self._tasks_collection.title.ilike(search_pattern),
+                    self._tasks_collection.description.ilike(search_pattern),
+                )
+            )
+
+        if filters.status:
+            filters_list.append(self._tasks_collection.status == filters.status)
+
+        if filters.priority:
+            filters_list.append(self._tasks_collection.priority == filters.priority)
+
+        if filters.assignee:
+            filters_list.append(self._tasks_collection.assignee == filters.assignee)
+
+        if filters.created_by:
+            filters_list.append(self._tasks_collection.created_by == filters.created_by)
+
+        if filters.created_at_gte:
+            filters_list.append(self._tasks_collection.created_at >= filters.created_at_gte)
+
+        if filters.created_at_lte:
+            filters_list.append(self._tasks_collection.created_at <= filters.created_at_lte)
+
+        return filters_list
+
+    @log(logger)
+    async def get_total_tasks_count(self, session: AsyncSession) -> int:
+        query = select(func.count()).select_from(self._tasks_collection)
+        result = await session.scalar(query)
+        return result or 0
+
+    @log(logger)
+    async def get_tasks_count_by_status(self, session: AsyncSession) -> dict[str, int]:
+        query = (
+            select(self._tasks_collection.status, func.count(self._tasks_collection.id))
+            .group_by(self._tasks_collection.status)
+        )
+        result = await session.execute(query)
+        return {row[0]: row[1] for row in result.fetchall()}
+
+    @log(logger)
+    async def get_tasks_count_by_priority(self, session: AsyncSession) -> dict[str, int]:
+        query = (
+            select(self._tasks_collection.priority, func.count(self._tasks_collection.id))
+            .group_by(self._tasks_collection.priority)
+        )
+        result = await session.execute(query)
+        return {row[0]: row[1] for row in result.fetchall()}
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/rabbitmq/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/rabbitmq/broker.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""RabbitMQ broker singleton."""
+
+from faststream.rabbit import RabbitBroker
+
+from task_service.core.config import settings
+
+# Глобальный broker
+broker = RabbitBroker(settings.rabbitmq_url)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/rabbitmq/publisher.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from faststream.rabbit import RabbitBroker
+
+from task_service.core.config import settings
+from task_service.core.logger import get_logger, log
+from task_service.schemas.task import TaskNotificationMessage
+
+logger = get_logger(__name__)
+
+
+class RabbitMQPublisher:
+    """Публикатор сообщений в RabbitMQ."""
+
+    def __init__(self, broker: RabbitBroker) -> None:
+        self._broker = broker
+
+    @log(logger)
+    async def publish_task_notification(self, message: TaskNotificationMessage) -> None:
+        """Отправить уведомление о задаче."""
+        await self._broker.publish(
+            message=message.model_dump_json().encode(),
+            exchange=settings.RABBITMQ_EXCHANGE,
+            routing_key=settings.RABBITMQ_ROUTING_KEY,
+        )
+        logger.info(f"Published notification: {message.event_type} for task {message.task_id}")
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/redis/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/infrastructure/redis/repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Any
+
+from pydantic import ValidationError
+from redis.asyncio import Redis
+
+from task_service.core.config import settings
+from task_service.core.logger import get_logger
+from task_service.schemas.task import TaskSchema
+
+logger = get_logger(__name__)
+
+
+class RedisRepository:
+    """Redis репозиторий для кэширования задач."""
+
+    _redis = Redis.from_url(
+        settings.redis_url,
+        db=settings.REDIS_DB,
+        username=settings.REDIS_USERNAME,
+        password=settings.REDIS_PASSWORD,
+        decode_responses=True,
+    )
+
+    async def get_task(self, task_id: int) -> TaskSchema | None:
+        """Получить задачу из кэша."""
+        data = await self._redis.get(str(task_id))
+
+        if not data:
+            return None
+
+        try:
+            return TaskSchema.model_validate_json(data)
+        except ValidationError:
+            logger.warning(f"Invalid task data in cache: {task_id}")
+            await self._redis.delete(str(task_id))
+            return None
+
+    async def set_task(self, task: TaskSchema, ex: int | None = None) -> None:
+        """Сохранить задачу в кэш."""
+        ttl = ex or settings.REDIS_CACHE_TTL
+        await self._redis.set(
+            name=str(task.id),
+            value=task.model_dump_json(),
+            ex=ttl,
+        )
+
+    async def delete_task(self, task_id: int) -> None:
+        """Удалить задачу из кэша."""
+        await self._redis.delete(str(task_id))
+
+    async def clear_cache(self) -> None:
+        """Очистить весь кэш."""
+        await self._redis.flushdb()
+
+    async def ping(self) -> Any:
+        """Проверить соединение с Redis."""
+        return await self._redis.ping()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/api/pagination.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Generic, List, TypeVar
+
+from fastapi import Query
+from pydantic import BaseModel, Field
+
+
+class PaginationAwareRequest(BaseModel):
+    """Базовый класс для запросов с пагинацией."""
+
+    limit: int = Query(100)
+    offset: int = Query(0)
+
+
+T = TypeVar("T")
+
+
+class Pagination(BaseModel, Generic[T]):
+    """
+    Pagination model.
+    
+    Wrap a generic list of items with skip, limit and counter.
+    """
+
+    limit: int = 10
+    offset: int = 0
+    count: int = 0
+    total: int = 0
+    items: List[T] = Field(default_factory=list)
+
+    def __init__(self, **data) -> None:  # type: ignore
+        data.setdefault("count", len(data.get("items", [])))
+        super().__init__(**data)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/api/tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from typing import Optional
+
+from fastapi import Query
+from pydantic import BaseModel, Field
+
+from task_service.schemas.api.pagination import PaginationAwareRequest
+from task_service.schemas.task import TaskPriority, TaskStatus
+
+
+class TasksRequest(PaginationAwareRequest):
+    """Запрос списка задач с фильтрацией."""
+
+    search: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    assignee: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at_gte: Optional[datetime] = None
+    created_at_lte: Optional[datetime] = None
+
+
+class TaskIDs(BaseModel):
+    """Список ID задач."""
+
+    ids: list[int] = Field(Query(default_factory=list))
+
+
+class CreateTaskRequestPayload(BaseModel):
+    """Payload для создания задачи."""
+
+    title: str = Field(..., min_length=1, max_length=255, description="Название задачи")
+    description: Optional[str] = Field(None, max_length=2000, description="Описание задачи")
+    status: TaskStatus = Field(default=TaskStatus.TODO, description="Статус задачи")
+    priority: TaskPriority = Field(default=TaskPriority.MEDIUM, description="Приоритет задачи")
+    assignee: Optional[str] = Field(None, max_length=100, description="Исполнитель")
+    due_date: Optional[datetime] = Field(None, description="Срок выполнения")
+
+
+class UpdateTaskRequestPayload(BaseModel):
+    """Payload для обновления задачи."""
+
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=2000)
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    assignee: Optional[str] = Field(None, max_length=100)
+    due_date: Optional[datetime] = None
+
+
+class TaskResponse(BaseModel):
+    """Ответ с данными задачи."""
+
+    id: int
+    title: str
+    description: Optional[str]
+    status: TaskStatus
+    priority: TaskPriority
+    assignee: Optional[str]
+    due_date: Optional[datetime]
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/auth.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from pydantic import BaseModel
+
+
+class AccessTokenData(BaseModel):
+    """Данные из токена доступа."""
+
+    username: str
+    user_id: int | None = None
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/src/task_service/schemas/task.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class TaskStatus(str, Enum):
+    """Статусы задачи."""
+
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+class TaskPriority(str, Enum):
+    """Приоритеты задачи."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class TaskEventType(str, Enum):
+    """Типы событий задачи."""
+
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    STATUS_CHANGED = "status_changed"
+    ASSIGNED = "assigned"
+
+
+class BaseTask(BaseModel):
+    """Базовая схема задачи."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str
+    description: Optional[str] = None
+    status: TaskStatus = TaskStatus.TODO
+    priority: TaskPriority = TaskPriority.MEDIUM
+    assignee: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+
+class CreateTask(BaseTask):
+    """Схема для создания задачи."""
+
+    created_by: str
+
+
+class UpdateTask(BaseTask):
+    """Схема для обновления задачи."""
+
+    title: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+
+
+class TaskSchema(BaseTask):
+    """Схема задачи из БД."""
+
+    id: int
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+
+# ======== Межслойные DTO (Filters) ========
+
+class TaskFilters(BaseModel):
+    """Фильтры для получения задач - межслойная DTO."""
+
+    limit: int
+    offset: int
+    search: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    assignee: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at_gte: Optional[datetime] = None
+    created_at_lte: Optional[datetime] = None
+
+
+# ======== RabbitMQ Messages ========
+
+class TaskNotificationMessage(BaseModel):
+    """Сообщение для RabbitMQ о событии задачи."""
+
+    task_id: int
+    event_type: TaskEventType
+    task_title: str
+    task_description: Optional[str] = None
+    assignee: Optional[str] = None
+    status: TaskStatus
+    priority: TaskPriority
+    created_by: str
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/api/test_tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import pytest
+from dishka import Provider, Scope
+from fastapi import FastAPI
+from httpx import AsyncClient
+from starlette import status
+
+from task_service.core.exceptions.tasks import TaskNotFoundException
+from task_service.domain.use_cases.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.schemas.task import TaskSchema
+from tests.conftest import override
+from tests.mocks import MockedUseCase
+
+
+class TestTasksAPI:
+    """Тесты API задач."""
+
+    # === GET /api/v1/tasks ===
+
+    async def test_get_all_tasks_success(
+        self,
+        app: FastAPI,
+        test_client: AsyncClient,
+        valid_task_schema: TaskSchema,
+    ) -> None:
+        """Успешное получение списка задач."""
+        mocked_use_case = MockedUseCase(to_return=([valid_task_schema], 1))
+
+        # Переопределяем execute чтобы возвращал tuple
+        async def mock_execute(*args, **kwargs):
+            return [valid_task_schema], 1
+
+        mocked_use_case.execute = mock_execute
+
+        mock_provider = Provider(scope=Scope.REQUEST)
+        mock_provider.provide(lambda: mocked_use_case, provides=GetTasksUseCase)
+
+        async with override(app.state.dishka_container, mock_provider):
+            response = await test_client.get("/api/v1/tasks")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+
+    # === GET /api/v1/tasks/{task_id} ===
+
+    async def test_get_task_by_id_success(
+        self,
+        app: FastAPI,
+        test_client: AsyncClient,
+        valid_task_schema: TaskSchema,
+    ) -> None:
+        """Успешное получение задачи по ID."""
+        mocked_use_case = MockedUseCase(to_return=valid_task_schema)
+
+        mock_provider = Provider(scope=Scope.REQUEST)
+        mock_provider.provide(lambda: mocked_use_case, provides=GetTasksUseCase)
+
+        async with override(app.state.dishka_container, mock_provider):
+            response = await test_client.get("/api/v1/tasks/1")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == valid_task_schema.id
+
+    async def test_get_task_by_id_not_found(
+        self,
+        app: FastAPI,
+        test_client: AsyncClient,
+    ) -> None:
+        """Задача не найдена - 404."""
+        mocked_use_case = MockedUseCase(to_raise=TaskNotFoundException(task_id=999))
+
+        mock_provider = Provider(scope=Scope.REQUEST)
+        mock_provider.provide(lambda: mocked_use_case, provides=GetTasksUseCase)
+
+        async with override(app.state.dishka_container, mock_provider):
+            response = await test_client.get("/api/v1/tasks/999")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    # === POST /api/v1/tasks ===
+
+    async def test_create_task_success(
+        self,
+        app: FastAPI,
+        test_client: AsyncClient,
+        valid_task_schema: TaskSchema,
+    ) -> None:
+        """Успешное создание задачи."""
+        mocked_use_case = MockedUseCase(to_return=valid_task_schema)
+
+        mock_provider = Provider(scope=Scope.REQUEST)
+        mock_provider.provide(lambda: mocked_use_case, provides=CreateTaskUseCase)
+
+        payload = {
+            "title": "New Task",
+            "description": "Description",
+            "priority": "medium",
+        }
+
+        async with override(app.state.dishka_container, mock_provider):
+            response = await test_client.post(
+                "/api/v1/tasks",
+                json=payload,
+                headers={"X-User-Name": "test_user"},
+            )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["id"] == valid_task_schema.id
+
+    async def test_create_task_validation_error(
+        self,
+        app: FastAPI,
+        test_client: AsyncClient,
+    ) -> None:
+        """Ошибка валидации - пустой title."""
+        payload = {
+            "title": "",  # пустой
+            "priority": "medium",
+        }
+
+        response = await test_client.post(
+            "/api/v1/tasks",
+            json=payload,
+            headers={"X-User-Name": "test_user"},
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/conftest.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import AsyncGenerator, AsyncIterator, Iterator, TypeVar
+
+import pytest
+from dishka import DEFAULT_COMPONENT, AsyncContainer, Container, Provider, Scope, make_async_container
+from dishka.provider import BaseProvider
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from task_service.core.config import Settings, settings as app_settings
+from task_service.infrastructure.postgres.database import Database
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.schemas.auth import AccessTokenData
+from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, TaskStatus, TaskPriority
+from tests.helpers import TestDatabase, TestDatabaseSessionWrapper
+
+
+# === Event Loop ===
+@pytest.fixture(scope="session")
+def event_loop():
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.get_event_loop_policy().new_event_loop()
+
+
+# === Settings ===
+@pytest.fixture(scope="module")
+def settings() -> Settings:
+    return app_settings
+
+
+# === Database ===
+@pytest.fixture
+def test_database(settings: Settings) -> TestDatabase:
+    return TestDatabase(settings.postgres_url)
+
+
+@pytest.fixture
+async def async_session(test_database: TestDatabase) -> AsyncIterator[AsyncSession]:
+    async with test_database.session() as session:
+        yield session
+
+
+@pytest.fixture
+def db_with_active_session(async_session: AsyncSession) -> TestDatabaseSessionWrapper:
+    return TestDatabaseSessionWrapper(async_session)
+
+
+# === Repositories ===
+@pytest.fixture
+def task_repository() -> TaskRepository:
+    return TaskRepository()
+
+
+# === App & Client ===
+@pytest.fixture
+def app() -> Iterator[FastAPI]:
+    from task_service.app import app
+    yield app
+
+
+@pytest.fixture
+async def test_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+# === Test Data ===
+@pytest.fixture
+def test_current_user() -> AccessTokenData:
+    return AccessTokenData(username="test_user")
+
+
+@pytest.fixture
+def valid_create_task() -> CreateTask:
+    return CreateTask(
+        title="Test Task",
+        description="Test Description",
+        status=TaskStatus.TODO,
+        priority=TaskPriority.MEDIUM,
+        assignee="test_assignee",
+        created_by="test_user",
+    )
+
+
+@pytest.fixture
+def valid_task_schema(valid_create_task: CreateTask) -> TaskSchema:
+    now = datetime.now(timezone.utc)
+    return TaskSchema(
+        id=1,
+        title=valid_create_task.title,
+        description=valid_create_task.description,
+        status=valid_create_task.status,
+        priority=valid_create_task.priority,
+        assignee=valid_create_task.assignee,
+        due_date=None,
+        created_by=valid_create_task.created_by,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@pytest.fixture
+def valid_task_filters() -> TaskFilters:
+    return TaskFilters(limit=10, offset=0)
+
+
+# === DI Override helpers ===
+def _container_provider(container: AsyncContainer) -> BaseProvider:
+    container_provider = BaseProvider(component=DEFAULT_COMPONENT)
+    container_provider.factories.extend(container.registry.factories.values())
+    for registry in container.child_registries:
+        container_provider.factories.extend(registry.factories.values())
+    return container_provider
+
+
+CT = TypeVar("CT", Container, AsyncContainer)
+
+
+def _swap(c1: CT, c2: CT) -> None:
+    for attr in type(c1).__slots__:
+        tmp = getattr(c1, attr)
+        setattr(c1, attr, getattr(c2, attr))
+        setattr(c2, attr, tmp)
+
+
+@asynccontextmanager
+async def override(container: AsyncContainer, *providers: BaseProvider) -> AsyncGenerator:
+    new_container = make_async_container(_container_provider(container), *providers)
+    _swap(container, new_container)
+    yield
+    await container.close()
+    _swap(new_container, container)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/domain/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/domain/use_cases/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/domain/use_cases/test_create_task.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import pytest
+
+from task_service.domain.use_cases.create_task import CreateTaskUseCase
+from task_service.schemas.task import CreateTask, TaskSchema
+from tests.helpers import TestDatabaseSessionWrapper
+from tests.mocks import MockedTaskRepository, MockedRedisRepository, MockedRabbitMQPublisher
+
+
+class TestCreateTaskUseCase:
+    """Тесты use case создания задачи."""
+
+    async def test_create_task_success(
+        self,
+        valid_create_task: CreateTask,
+        valid_task_schema: TaskSchema,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Успешное создание задачи."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+        mocked_publisher = MockedRabbitMQPublisher()
+
+        use_case = CreateTaskUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            publisher=mocked_publisher,
+            cache=mocked_cache,
+        )
+
+        result = await use_case.execute(task=valid_create_task)
+
+        assert isinstance(result, TaskSchema)
+        assert result.id == valid_task_schema.id
+        assert result.title == valid_task_schema.title
+        assert mocked_repo.calls_counter["create_task"] == 1
+        assert mocked_cache.calls_counter["set_task"] == 1
+        assert mocked_publisher.calls_counter["publish_task_notification"] == 1
+
+    async def test_create_task_publishes_notification(
+        self,
+        valid_create_task: CreateTask,
+        valid_task_schema: TaskSchema,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Проверка что при создании отправляется уведомление."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+        mocked_publisher = MockedRabbitMQPublisher()
+
+        use_case = CreateTaskUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            publisher=mocked_publisher,
+            cache=mocked_cache,
+        )
+
+        await use_case.execute(task=valid_create_task)
+
+        assert len(mocked_publisher.published_messages) == 1
+        notification = mocked_publisher.published_messages[0]
+        assert notification.task_id == valid_task_schema.id
+        assert notification.event_type.value == "created"
+
+    async def test_create_task_caches_result(
+        self,
+        valid_create_task: CreateTask,
+        valid_task_schema: TaskSchema,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Проверка что созданная задача кэшируется."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+        mocked_publisher = MockedRabbitMQPublisher()
+
+        use_case = CreateTaskUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            publisher=mocked_publisher,
+            cache=mocked_cache,
+        )
+
+        await use_case.execute(task=valid_create_task)
+
+        # Проверяем что задача в кэше
+        cached_task = await mocked_cache.get_task(valid_task_schema.id)
+        assert cached_task is not None
+        assert cached_task.id == valid_task_schema.id
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/domain/use_cases/test_get_tasks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import pytest
+
+from task_service.core.exceptions.tasks import TaskNotFoundException
+from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.schemas.task import TaskFilters, TaskSchema
+from tests.helpers import TestDatabaseSessionWrapper
+from tests.mocks import MockedTaskRepository, MockedRedisRepository
+
+
+class TestGetTasksUseCase:
+    """Тесты use case получения задач."""
+
+    async def test_get_all_tasks_success(
+        self,
+        valid_task_schema: TaskSchema,
+        valid_task_filters: TaskFilters,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Успешное получение списка задач."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+
+        use_case = GetTasksUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            cache=mocked_cache,
+        )
+
+        tasks, total = await use_case.execute(filters=valid_task_filters)
+
+        assert len(tasks) == 1
+        assert total == 1
+        assert mocked_repo.calls_counter["get_all_tasks"] == 1
+
+    async def test_get_all_tasks_empty(
+        self,
+        valid_task_filters: TaskFilters,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Получение пустого списка задач."""
+        mocked_repo = MockedTaskRepository(to_return=None)
+        mocked_cache = MockedRedisRepository()
+
+        use_case = GetTasksUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            cache=mocked_cache,
+        )
+
+        tasks, total = await use_case.execute(filters=valid_task_filters)
+
+        assert tasks == []
+        assert total == 0
+
+    async def test_get_task_by_id_cache_hit(
+        self,
+        valid_task_schema: TaskSchema,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Получение задачи из кэша (cache hit)."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+
+        # Предварительно кладём в кэш
+        await mocked_cache.set_task(valid_task_schema)
+
+        use_case = GetTasksUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            cache=mocked_cache,
+        )
+
+        result = await use_case.get_by_id(task_id=valid_task_schema.id)
+
+        assert result.id == valid_task_schema.id
+        # Репозиторий НЕ вызывался - взяли из кэша
+        assert mocked_repo.calls_counter["get_one_task"] == 0
+        assert mocked_cache.calls_counter["get_task"] == 1
+
+    async def test_get_task_by_id_cache_miss(
+        self,
+        valid_task_schema: TaskSchema,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Получение задачи из БД при отсутствии в кэше (cache miss)."""
+        mocked_repo = MockedTaskRepository(to_return=valid_task_schema)
+        mocked_cache = MockedRedisRepository()
+
+        use_case = GetTasksUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            cache=mocked_cache,
+        )
+
+        result = await use_case.get_by_id(task_id=valid_task_schema.id)
+
+        assert result.id == valid_task_schema.id
+        # Репозиторий вызвался
+        assert mocked_repo.calls_counter["get_one_task"] == 1
+        # Результат закэширован
+        assert mocked_cache.calls_counter["set_task"] == 1
+
+    async def test_get_task_by_id_not_found(
+        self,
+        db_with_active_session: TestDatabaseSessionWrapper,
+    ) -> None:
+        """Задача не найдена."""
+        mocked_repo = MockedTaskRepository(to_raise=TaskNotFoundException(task_id=999))
+        mocked_cache = MockedRedisRepository()
+
+        use_case = GetTasksUseCase(
+            database=db_with_active_session,
+            repository=mocked_repo,
+            cache=mocked_cache,
+        )
+
+        with pytest.raises(TaskNotFoundException):
+            await use_case.get_by_id(task_id=999)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/helpers.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from task_service.infrastructure.postgres.database import Database
+
+
+class TestDatabase(Database):
+    """База данных для тестов с rollback после каждого теста."""
+
+    @asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        async with self._session_factory() as session:
+            try:
+                yield session
+            finally:
+                await session.rollback()
+
+
+class TestDatabaseSessionWrapper(Database):
+    """Обёртка для использования существующей сессии в тестах."""
+
+    __test__ = False
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    @property
+    def active_session(self) -> AsyncSession:
+        return self._session
+
+    @asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        yield self._session
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/infrastructure/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/infrastructure/postgres/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/infrastructure/postgres/test_repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from task_service.core.exceptions.tasks import TaskNotFoundException
+from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, TaskStatus, TaskPriority, UpdateTask
+
+
+class TestTaskRepository:
+    """Тесты репозитория задач."""
+
+    async def test_create_task(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Создание задачи в БД."""
+        result = await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        assert isinstance(result, TaskSchema)
+        assert result.id is not None
+        assert result.title == valid_create_task.title
+        assert result.status == valid_create_task.status
+
+    async def test_get_one_task(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Получение задачи по ID."""
+        # Создаём задачу
+        created = await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        # Получаем
+        result = await task_repository.get_one_task(
+            session=async_session,
+            task_id=created.id,
+        )
+
+        assert result.id == created.id
+        assert result.title == created.title
+
+    async def test_get_one_task_not_found(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+    ) -> None:
+        """Задача не найдена."""
+        with pytest.raises(TaskNotFoundException):
+            await task_repository.get_one_task(
+                session=async_session,
+                task_id=99999,
+            )
+
+    async def test_get_all_tasks(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Получение списка задач."""
+        # Создаём задачу
+        await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        filters = TaskFilters(limit=10, offset=0)
+        tasks, total = await task_repository.get_all_tasks(
+            session=async_session,
+            filters=filters,
+        )
+
+        assert len(tasks) >= 1
+        assert total >= 1
+
+    async def test_get_all_tasks_with_status_filter(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Фильтрация задач по статусу."""
+        # Создаём задачу со статусом TODO
+        await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        filters = TaskFilters(limit=10, offset=0, status=TaskStatus.TODO)
+        tasks, total = await task_repository.get_all_tasks(
+            session=async_session,
+            filters=filters,
+        )
+
+        for task in tasks:
+            assert task.status == TaskStatus.TODO
+
+    async def test_update_task(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Обновление задачи."""
+        # Создаём
+        created = await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        # Обновляем
+        update_data = UpdateTask(status=TaskStatus.IN_PROGRESS)
+        updated = await task_repository.update_task(
+            session=async_session,
+            task_id=created.id,
+            task=update_data,
+        )
+
+        assert updated.id == created.id
+        assert updated.status == TaskStatus.IN_PROGRESS
+
+    async def test_delete_task(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+        valid_create_task: CreateTask,
+    ) -> None:
+        """Удаление задачи."""
+        # Создаём
+        created = await task_repository.create_task(
+            session=async_session,
+            task=valid_create_task,
+        )
+
+        # Удаляем
+        await task_repository.delete_task(
+            session=async_session,
+            task_id=created.id,
+        )
+
+        # Проверяем что удалена
+        with pytest.raises(TaskNotFoundException):
+            await task_repository.get_one_task(
+                session=async_session,
+                task_id=created.id,
+            )
+
+    async def test_delete_task_not_found(
+        self,
+        async_session: AsyncSession,
+        task_repository: TaskRepository,
+    ) -> None:
+        """Удаление несуществующей задачи."""
+        with pytest.raises(TaskNotFoundException):
+            await task_repository.delete_task(
+                session=async_session,
+                task_id=99999,
+            )
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task-service/tests/mocks.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from collections import defaultdict
+from typing import Any
+
+
+class MockedTaskRepository:
+    """Мок репозитория задач для тестирования use cases."""
+
+    calls_counter: dict[str, int]
+
+    def __init__(
+        self,
+        to_return: Any | None = None,
+        to_raise: Exception | None = None,
+    ) -> None:
+        self._to_return = to_return
+        self._to_raise = to_raise
+        self.calls_counter = defaultdict(int)
+
+    def _add_counter_and_check_to_raise(self, function_name: str) -> None:
+        self.calls_counter[function_name] += 1
+        if self._to_raise:
+            raise self._to_raise
+
+    async def create_task(self, *args: Any, **kwargs: Any) -> Any | None:
+        self._add_counter_and_check_to_raise("create_task")
+        return self._to_return
+
+    async def get_one_task(self, *args: Any, **kwargs: Any) -> Any | None:
+        self._add_counter_and_check_to_raise("get_one_task")
+        return self._to_return
+
+    async def get_all_tasks(self, *args: Any, **kwargs: Any) -> tuple[list, int]:
+        self._add_counter_and_check_to_raise("get_all_tasks")
+        if self._to_return:
+            return [self._to_return], 1
+        return [], 0
+
+    async def update_task(self, *args: Any, **kwargs: Any) -> Any | None:
+        self._add_counter_and_check_to_raise("update_task")
+        return self._to_return
+
+    async def delete_task(self, *args: Any, **kwargs: Any) -> None:
+        self._add_counter_and_check_to_raise("delete_task")
+
+
+class MockedRedisRepository:
+    """Мок Redis репозитория."""
+
+    calls_counter: dict[str, int]
+
+    def __init__(self) -> None:
+        self.calls_counter = defaultdict(int)
+        self._cache: dict[int, Any] = {}
+
+    async def get_task(self, task_id: int) -> Any | None:
+        self.calls_counter["get_task"] += 1
+        return self._cache.get(task_id)
+
+    async def set_task(self, task: Any, ex: int | None = None) -> None:
+        self.calls_counter["set_task"] += 1
+        self._cache[task.id] = task
+
+    async def delete_task(self, task_id: int) -> None:
+        self.calls_counter["delete_task"] += 1
+        self._cache.pop(task_id, None)
+
+
+class MockedRabbitMQPublisher:
+    """Мок RabbitMQ publisher."""
+
+    calls_counter: dict[str, int]
+
+    def __init__(self) -> None:
+        self.calls_counter = defaultdict(int)
+        self.published_messages: list = []
+
+    async def publish_task_notification(self, message: Any) -> None:
+        self.calls_counter["publish_task_notification"] += 1
+        self.published_messages.append(message)
+
+
+class MockedUseCase:
+    """Мок use case для тестирования API."""
+
+    def __init__(
+        self,
+        to_return: Any | None = None,
+        to_raise: Exception | None = None,
+    ) -> None:
+        self._to_return = to_return
+        self._to_raise = to_raise
+
+    async def execute(self, *args: Any, **kwargs: Any) -> Any | None:
+        if self._to_raise:
+            raise self._to_raise
+        return self._to_return
+
+    async def get_by_id(self, *args: Any, **kwargs: Any) -> Any | None:
+        if self._to_raise:
+            raise self._to_raise
+        return self._to_return
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/alembic/env.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import asyncio
+import logging
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+from sqlalchemy.ext.asyncio import AsyncEngine
+from tenacity import before_sleep_log, retry, wait_exponential
+
+from task_notification.core.config import settings
+from task_notification.infrastructure.postgres.base import Base
+from task_notification.infrastructure.postgres.models import Notification  # noqa: F401
+
+CREATE_SCHEMA_QUERY = f"CREATE SCHEMA IF NOT EXISTS {settings.POSTGRES_SCHEMA};"
+
+config = context.config
+logger = logging.getLogger(__name__)
+
+target_metadata = Base.metadata
+
+config.set_main_option("sqlalchemy.url", settings.postgres_url)
+
+
+def filter_foreign_schemas(name, type_, parent_names):
+    return type_ != "schema" or name == settings.POSTGRES_SCHEMA
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table_schema=settings.POSTGRES_SCHEMA,
+        include_schemas=True,
+        include_name=filter_foreign_schemas,
+    )
+
+    with context.begin_transaction():
+        context.execute(CREATE_SCHEMA_QUERY)
+        context.run_migrations()
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.ERROR),
+)
+async def run_migrations_online(engine: AsyncEngine):
+    """Run migrations in 'online' mode."""
+    async with engine.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    connectable = AsyncEngine(
+        engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+            future=True,
+        ),
+    )
+
+    asyncio.run(run_migrations_online(connectable))
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/alembic/versions/001_init_notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""init notifications table
+
+Revision ID: 001
+Revises:
+Create Date: 2024-01-01 00:00:00.000000
+
+"""
+from typing import Sequence, Union
+
+import sqlalchemy as sa
+from alembic import op
+
+from task_notification.core.config import settings
+
+revision: str = "001"
+down_revision: Union[str, None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    op.create_table(
+        "notifications",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("task_id", sa.Integer(), nullable=False),
+        sa.Column("notification_type", sa.String(50), nullable=False),
+        sa.Column("status", sa.String(50), server_default="pending", nullable=False),
+        sa.Column("recipient", sa.String(100), nullable=False),
+        sa.Column("title", sa.String(255), nullable=False),
+        sa.Column("message", sa.Text(), nullable=False),
+        sa.Column("is_read", sa.Boolean(), server_default="false", nullable=False),
+        sa.Column("error_message", sa.Text(), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("timezone('UTC', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column("sent_at", sa.DateTime(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        schema=settings.POSTGRES_SCHEMA,
+    )
+
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_task_id",
+        "notifications",
+        ["task_id"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_recipient",
+        "notifications",
+        ["recipient"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.create_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_status",
+        "notifications",
+        ["status"],
+        schema=settings.POSTGRES_SCHEMA,
+    )
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    op.drop_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_status",
+        table_name="notifications",
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.drop_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_recipient",
+        table_name="notifications",
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.drop_index(
+        f"ix_{settings.POSTGRES_SCHEMA}_notifications_task_id",
+        table_name="notifications",
+        schema=settings.POSTGRES_SCHEMA,
+    )
+    op.drop_table("notifications", schema=settings.POSTGRES_SCHEMA)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/arq_worker.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""ARQ Worker с CRON задачами для отправки уведомлений."""
+
+from arq import cron
+from arq.connections import RedisSettings
+
+from task_notification.core.config import settings
+from task_notification.domain.tasks.send_pending_notifications import send_pending_notifications_task
+
+
+class WorkerSettings:
+    """Настройки ARQ Worker с CRON."""
+
+    redis_settings = RedisSettings(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        database=settings.REDIS_DB,
+        password=settings.REDIS_PASSWORD,
+    )
+    allow_abort_jobs = True
+    
+    # CRON задача - каждые 30 секунд
+    cron_jobs = [
+        cron(
+            send_pending_notifications_task,
+            name="send_pending_notifications",
+            second={0, 30},  # Каждые 30 секунд
+        ),
+    ]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/main.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import asyncio
+
+from uvicorn import Config, Server
+
+from task_notification.app import create_app
+from task_notification.core.config import settings
+from task_notification.core.logger import get_logger, setup_logging
+
+setup_logging()
+logger = get_logger(__name__)
+
+app = create_app()
+
+
+async def run() -> None:
+    """Запуск сервера."""
+    logger.info("Starting Task Notification Service...")
+
+    config = Config(
+        app,
+        host="0.0.0.0",
+        port=settings.PORT,
+    )
+    server = Server(config)
+
+    tasks = (asyncio.create_task(server.serve()),)
+
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+
+if __name__ == "__main__":
+    asyncio.run(run())
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/depends.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+Зависимости для API эндпоинтов.
+
+В учебном проекте авторизация упрощена.
+В реальном проекте здесь был бы JWT валидатор.
+"""
+
+from fastapi import Query
+
+
+def get_current_user(
+    user: str = Query(default="system", description="Current user"),
+) -> str:
+    """Получить текущего пользователя (упрощенная версия)."""
+    return user
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/health_check/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/health_check/health_check_router.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+health_check_router = APIRouter(tags=["Health check"])
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+
+
+@health_check_router.get("/health", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
+    """Проверка здоровья сервиса."""
+    return HealthResponse(status="healthy", service="task-notification")
+
+
+@health_check_router.get("/ready", response_model=HealthResponse)
+async def readiness_check() -> HealthResponse:
+    """Проверка готовности сервиса."""
+    return HealthResponse(status="ready", service="task-notification")
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/metrics.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from dishka import FromDishka
+from dishka.integrations.fastapi import inject
+from fastapi import APIRouter
+from prometheus_client import generate_latest
+from starlette.responses import Response
+
+from task_notification.domain.metrics.registry_metrics import (
+    instrumentator,
+    notifications_registry,
+)
+from task_notification.domain.metrics.use_case import GetNotificationsMetricsUseCase
+
+metrics_router = APIRouter()
+
+
+@metrics_router.get("/metrics", include_in_schema=False)
+@inject
+async def metrics(use_case: FromDishka[GetNotificationsMetricsUseCase]) -> Response:
+    await use_case.execute()
+    return Response(
+        content=generate_latest(notifications_registry) + generate_latest(instrumentator.registry),
+        media_type="text/plain",
+    )
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from dishka import FromDishka
+from dishka.integrations.fastapi import inject
+from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
+
+from task_notification.core.exceptions.notifications import NotificationNotFoundException
+from task_notification.core.logger import get_logger, log
+from task_notification.domain.use_cases.get_notifications import GetNotificationsUseCase
+from task_notification.schemas.api.notifications import NotificationResponse, NotificationsRequest
+from task_notification.schemas.api.pagination import Pagination
+from task_notification.schemas.notification import NotificationFilters
+
+logger = get_logger(__name__)
+
+notifications_router = APIRouter(prefix="/notifications")
+
+
+@notifications_router.get(
+    "",
+    response_model=Pagination[NotificationResponse],
+)
+@inject
+@log(logger)
+async def get_all_notifications(
+    use_case: FromDishka[GetNotificationsUseCase],
+    request: NotificationsRequest = Depends(),
+) -> Pagination[NotificationResponse]:
+    """Получить список уведомлений с фильтрацией и пагинацией."""
+    records, total = await use_case.execute(
+        filters=NotificationFilters.model_validate(request.model_dump()),
+    )
+    return Pagination(limit=request.limit, offset=request.offset, items=records, total=total)
+
+
+@notifications_router.get(
+    "/{notification_id}",
+    response_model=NotificationResponse,
+)
+@inject
+@log(logger)
+async def get_notification(
+    notification_id: int,
+    use_case: FromDishka[GetNotificationsUseCase],
+) -> NotificationResponse:
+    """Получить уведомление по ID."""
+    try:
+        return NotificationResponse.model_validate(await use_case.get_by_id(notification_id))
+    except NotificationNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@notifications_router.post(
+    "/{notification_id}/read",
+    response_model=NotificationResponse,
+)
+@inject
+@log(logger)
+async def mark_notification_as_read(
+    notification_id: int,
+    use_case: FromDishka[GetNotificationsUseCase],
+) -> NotificationResponse:
+    """Пометить уведомление как прочитанное."""
+    try:
+        return NotificationResponse.model_validate(await use_case.mark_as_read(notification_id))
+    except NotificationNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/api/rabbit_subscriber.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""RabbitMQ subscriber для обработки событий задач."""
+
+from dishka import FromDishka
+from dishka.integrations.faststream import inject
+from faststream.rabbit import ExchangeType, RabbitExchange, RabbitQueue
+from faststream.rabbit.fastapi import RabbitRouter
+from pydantic import ValidationError
+
+from task_notification.core.config import settings
+from task_notification.core.logger import get_logger, log
+from task_notification.core.providers.setup import config_container
+from task_notification.domain.use_cases.create_notification import CreateNotificationUseCase
+from task_notification.schemas.notification import TaskNotificationMessage
+
+logger = get_logger(__name__)
+
+rabbit_config = config_container.get(dict)
+router = RabbitRouter(**rabbit_config)
+
+
+@router.subscriber(
+    queue=RabbitQueue(
+        settings.RABBITMQ_QUEUE,
+        durable=True,
+        routing_key=settings.RABBITMQ_ROUTING_KEY,
+    ),
+    exchange=RabbitExchange(
+        settings.RABBITMQ_EXCHANGE,
+        type=ExchangeType.DIRECT,
+        durable=True,
+    ),
+)
+@inject
+@log(logger)
+async def task_event_subscriber(
+    raw_event: dict,
+    use_case: FromDishka[CreateNotificationUseCase],
+) -> None:
+    """Обработать событие задачи из RabbitMQ."""
+    try:
+        message = TaskNotificationMessage.model_validate(raw_event)
+    except ValidationError as e:
+        logger.error(f"Invalid task event schema: {raw_event}, error: {e}")
+        return
+
+    logger.info(f"Received task event: task_id={message.task_id}, event={message.event_type}")
+
+    await use_case.execute(message)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/app.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from contextlib import asynccontextmanager
+
+from dishka.integrations.fastapi import setup_dishka as setup_dishka_fastapi
+from dishka.integrations.faststream import setup_dishka as setup_dishka_faststream
+from fastapi import FastAPI
+from faststream import FastStream
+from starlette.middleware.cors import CORSMiddleware
+
+from task_notification.api.health_check.health_check_router import health_check_router
+from task_notification.api.metrics import metrics_router
+from task_notification.api.notifications import notifications_router
+from task_notification.api.rabbit_subscriber import router as rabbit_subscriber
+from task_notification.core.config import settings
+from task_notification.core.providers.setup import container
+from task_notification.domain.metrics.registry_metrics import setup_metrics
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan для управления жизненным циклом приложения."""
+    yield
+    await app.state.dishka_container.close()
+
+
+def create_app() -> FastAPI:
+    """Создание приложения FastAPI."""
+    app = FastAPI(
+        title="Task Notification Service",
+        description="Сервис уведомлений о задачах",
+        version="0.1.0",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
+        root_path=settings.ROOT_PATH,
+        lifespan=lifespan,
+    )
+
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Роутеры API
+    app.include_router(notifications_router, prefix="/api/v1", tags=["Notifications"])
+    app.include_router(health_check_router)
+    app.include_router(metrics_router)
+
+    # RabbitMQ subscriber
+    setup_dishka_faststream(container, FastStream(rabbit_subscriber.broker))
+    app.include_router(rabbit_subscriber, tags=["RabbitMQ Subscriber"])
+
+    # Метрики
+    setup_metrics(app)
+
+    # DI контейнер
+    setup_dishka_fastapi(container, app)
+
+    return app
+
+
+app = create_app()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/config.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    # Application
+    APP_NAME: str = "task-notification"
+    ENV: str = "DEV"
+    LOG_LEVEL: str = "INFO"
+    PORT: int = 8001
+    ROOT_PATH: str = ""
+
+    # PostgreSQL
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: SecretStr
+    POSTGRES_SCHEMA: str = "task_notification"
+    MIN_POOL_SIZE: int = 5
+    MAX_POOL_SIZE: int = 10
+
+    # RabbitMQ
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: SecretStr
+    RABBITMQ_PASSWORD: SecretStr
+    RABBITMQ_EXCHANGE: str = "tasks"
+    RABBITMQ_QUEUE: str = "task.notifications"
+    RABBITMQ_ROUTING_KEY: str = "task.notification"
+
+    # Redis (только для ARQ worker)
+    REDIS_HOST: str
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 1  # Отдельная БД для ARQ
+    REDIS_PASSWORD: str | None = None
+
+    # SMTP Settings
+    SMTP_HOST: str = "mailhog"
+    SMTP_PORT: int = 1025
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_EMAIL: str = "notifications@taskmanager.local"
+    SMTP_USE_TLS: bool = False
+    SMTP_START_TLS: bool = False
+
+    @property
+    def postgres_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    @property
+    def rabbitmq_url(self) -> str:
+        return (
+            f"amqp://{self.RABBITMQ_USER.get_secret_value()}:{self.RABBITMQ_PASSWORD.get_secret_value()}"
+            f"@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+        )
+
+settings = Settings()
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/exceptions/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/exceptions/base.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+
+class BaseServiceException(Exception):
+    """Базовое исключение сервиса."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class EntityNotFoundException(BaseServiceException):
+    """Сущность не найдена."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "{entity} с id={entity_id} не найден"
+
+    def __init__(self, entity: str, entity_id: int) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(entity=entity, entity_id=entity_id)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/exceptions/notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+from task_notification.core.exceptions.base import BaseServiceException, EntityNotFoundException
+
+
+class NotificationNotFoundException(EntityNotFoundException):
+    """Уведомление не найдено."""
+
+    def __init__(self, notification_id: int) -> None:
+        super().__init__(entity="Notification", entity_id=notification_id)
+
+
+class NotificationValidationError(BaseServiceException):
+    """Ошибка валидации уведомления."""
+    pass
+
+
+class NotificationSendError(BaseServiceException):
+    """Ошибка отправки уведомления."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Не удалось отправить уведомление {notification_id}: {detail}"
+
+    def __init__(self, notification_id: int, detail: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(
+            notification_id=notification_id,
+            detail=detail,
+        )
+        super().__init__(self.message)
+
+
+class InvalidNotificationTypeError(BaseServiceException):
+    """Неверный тип уведомления."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Неверный тип уведомления: {notification_type}"
+
+    def __init__(self, notification_type: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(notification_type=notification_type)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/exceptions/rabbitmq.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Final
+
+from task_notification.core.exceptions.base import BaseServiceException
+
+
+class RabbitMQConnectionError(BaseServiceException):
+    """Ошибка подключения к RabbitMQ."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Не удалось подключиться к RabbitMQ: {detail}"
+
+    def __init__(self, detail: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(detail=detail)
+        super().__init__(self.message)
+
+
+class RabbitMQConsumeError(BaseServiceException):
+    """Ошибка получения сообщения."""
+
+    _ERROR_MESSAGE_TEMPLATE: Final[str] = "Ошибка обработки сообщения: {detail}"
+
+    def __init__(self, detail: str) -> None:
+        self.message = self._ERROR_MESSAGE_TEMPLATE.format(detail=detail)
+        super().__init__(self.message)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/logger.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import logging
+import sys
+from functools import wraps
+from typing import Any, Awaitable, Callable, TypeVar, Union
+
+from task_notification.core.config import settings
+
+LOG_COLORS = {
+    logging.DEBUG: "\033[36m",  # Cyan
+    logging.INFO: "\033[32m",  # Green
+    logging.WARNING: "\033[33m",  # Yellow
+    logging.ERROR: "\033[31m",  # Red
+    logging.CRITICAL: "\033[35m",  # Magenta
+}
+
+RESET_COLOR = "\033[0m"
+
+FuncType = TypeVar("FuncType", bound=Callable[..., Union[Any, Awaitable[Any]]])
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        log_color = LOG_COLORS.get(record.levelno, "")
+        record.msg = f"{log_color}{record.msg}{RESET_COLOR}"
+        return super().format(record)
+
+
+def is_coroutine_function(func: Callable[..., Any]) -> bool:
+    return bool(func.__code__.co_flags & 0x80)
+
+
+def setup_logging() -> None:
+    """Настройка базового логирования."""
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    
+    # Настраиваем root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    
+    # Убираем все существующие handlers
+    root_logger.handlers.clear()
+    
+    # Добавляем наш colored handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(
+        ColoredFormatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
+    )
+    root_logger.addHandler(console_handler)
+
+
+def get_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.propagate = True  # Используем root logger
+    return logger
+
+
+async def _async_log_execution(
+    logger: logging.Logger,
+    func: Callable[..., Awaitable[Any]],
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    try:
+        result = await func(*args, **kwargs)
+        logger.info(f"Successfully executed {func.__name__}")
+        return result
+    except Exception as error:
+        logger.error(f"Error in {func.__name__}: {error}")
+        raise error
+
+
+def _sync_log_execution(
+    logger: logging.Logger,
+    func: Callable[..., Any],
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    try:
+        result = func(*args, **kwargs)
+        logger.info(f"Successfully executed {func.__name__}")
+        return result
+    except Exception as error:
+        logger.error(f"Error in {func.__name__}: {error}")
+        raise error
+
+
+def log(logger: logging.Logger) -> Callable[[FuncType], FuncType]:
+    def decorator(func: FuncType) -> FuncType:
+        if is_coroutine_function(func):
+
+            @wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return await _async_log_execution(logger, func, *args, **kwargs)
+
+            return async_wrapper  # type: ignore
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return _sync_log_execution(logger, func, *args, **kwargs)
+
+            return sync_wrapper  # type: ignore
+
+    return decorator
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/providers/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/providers/config_provider.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from dishka import Provider, Scope, provide
+
+from task_notification.core.config import settings
+
+
+class ConfigProvider(Provider):
+    """Провайдер конфигурации RabbitMQ."""
+
+    @provide(scope=Scope.APP)
+    def rabbit_config(self) -> dict:
+        return {
+            "url": settings.rabbitmq_url,
+        }
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/core/providers/setup.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import AsyncIterator
+
+from dishka import Provider, Scope, make_async_container, make_container, provide
+
+from task_notification.core.config import settings
+from task_notification.core.providers.config_provider import ConfigProvider
+from task_notification.domain.metrics.use_case import GetNotificationsMetricsUseCase
+from task_notification.domain.use_cases.create_notification import CreateNotificationUseCase
+from task_notification.domain.use_cases.get_notification_by_id import GetNotificationByIdUseCase
+from task_notification.domain.use_cases.get_notifications import GetNotificationsUseCase
+from task_notification.domain.use_cases.send_pending_notifications import SendPendingNotificationsUseCase
+from task_notification.domain.use_cases.update_notification_status import UpdateNotificationStatusUseCase
+from task_notification.infrastructure.email.email_service import EmailService
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+
+
+# Config container для RabbitMQ
+config_container = make_container(ConfigProvider())
+
+
+class InfrastructureProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    def get_database(self) -> Database:
+        return Database(settings.postgres_url)
+
+
+class RepositoryProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_notification_repository(self) -> NotificationRepository:
+        return NotificationRepository()
+
+
+class ServiceProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_email_service(self) -> EmailService:
+        return EmailService()
+
+
+class UseCaseProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_create_notification(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> CreateNotificationUseCase:
+        return CreateNotificationUseCase(database, repository)
+
+    @provide
+    def get_get_notification_by_id(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> GetNotificationByIdUseCase:
+        return GetNotificationByIdUseCase(database, repository)
+
+    @provide
+    def get_update_notification_status(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> UpdateNotificationStatusUseCase:
+        return UpdateNotificationStatusUseCase(database, repository)
+
+    @provide
+    def get_get_notifications(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> GetNotificationsUseCase:
+        return GetNotificationsUseCase(database, repository)
+
+    @provide
+    def get_send_pending_notifications(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+        email_service: EmailService,
+    ) -> SendPendingNotificationsUseCase:
+        return SendPendingNotificationsUseCase(database, repository, email_service)
+
+
+class MetricsProvider(Provider):
+    scope = Scope.REQUEST
+
+    @provide
+    def get_notifications_metrics(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> GetNotificationsMetricsUseCase:
+        return GetNotificationsMetricsUseCase(database, repository)
+
+
+container = make_async_container(
+    InfrastructureProvider(),
+    RepositoryProvider(),
+    ServiceProvider(),
+    UseCaseProvider(),
+    MetricsProvider(),
+)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/metrics/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/metrics/registry_metrics.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from fastapi import FastAPI
+from prometheus_client import CollectorRegistry, Counter, Gauge
+from prometheus_fastapi_instrumentator import Instrumentator
+
+notifications_registry = CollectorRegistry()
+
+instrumentator = Instrumentator()
+
+# === Бизнес-метрики ===
+NOTIFICATIONS_RECEIVED = Counter(
+    "task_notification_received_total",
+    "Total number of notifications received from RabbitMQ",
+    registry=notifications_registry,
+)
+NOTIFICATIONS_SENT = Counter(
+    "task_notification_sent_total",
+    "Total number of notifications successfully sent",
+    registry=notifications_registry,
+)
+NOTIFICATIONS_FAILED = Counter(
+    "task_notification_failed_total",
+    "Total number of failed notifications",
+    registry=notifications_registry,
+)
+
+# === Gauge метрики ===
+NOTIFICATIONS_TOTAL = Gauge(
+    "task_notification_total",
+    "Current total number of notifications",
+    registry=notifications_registry,
+)
+NOTIFICATIONS_BY_STATUS = Gauge(
+    "task_notification_by_status",
+    "Current number of notifications by status",
+    ["status"],
+    registry=notifications_registry,
+)
+NOTIFICATIONS_PENDING = Gauge(
+    "task_notification_pending",
+    "Current number of pending notifications",
+    registry=notifications_registry,
+)
+
+
+def setup_metrics(app: FastAPI) -> None:
+    instrumentator.instrument(app)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/metrics/use_case.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_notification.domain.metrics.registry_metrics import (
+    NOTIFICATIONS_BY_STATUS,
+    NOTIFICATIONS_PENDING,
+    NOTIFICATIONS_TOTAL,
+)
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+
+
+class GetNotificationsMetricsUseCase:
+    """Use case для обновления метрик уведомлений."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> None:
+        self._database = database
+        self._repository = repository
+
+    async def execute(self) -> None:
+        """Обновить все gauge метрики."""
+        async with self._database.session() as session:
+            # Общее количество
+            total = await self._repository.get_total_notifications_count(session)
+            NOTIFICATIONS_TOTAL.set(total)
+
+            # По статусам
+            status_counts = await self._repository.get_notifications_count_by_status(session)
+            for status_value, count in status_counts.items():
+                NOTIFICATIONS_BY_STATUS.labels(status=status_value).set(count)
+
+            # Ожидающие
+            pending = await self._repository.get_pending_notifications_count(session)
+            NOTIFICATIONS_PENDING.set(pending)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/tasks/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/tasks/send_pending_notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""ARQ task для отправки pending уведомлений."""
+
+from typing import Any
+
+from task_notification.core.logger import get_logger, setup_logging
+from task_notification.core.providers.setup import container
+from task_notification.domain.use_cases.send_pending_notifications import SendPendingNotificationsUseCase
+
+logger = get_logger(__name__)
+
+
+async def send_pending_notifications_task(ctx: Any) -> dict:
+    """CRON задача для отправки pending уведомлений."""
+    setup_logging()
+    logger.info("Starting send_pending_notifications_task")
+
+    async with container() as nested_container:
+        use_case = await nested_container.get(SendPendingNotificationsUseCase)
+        result = await use_case.execute()
+
+    logger.info(f"send_pending_notifications_task completed: {result}")
+    return result
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/create_notification.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use case для создания уведомления из события задачи."""
+
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.schemas.notification import (
+    CreateNotification,
+    NotificationSchema,
+    NotificationType,
+    TaskNotificationMessage,
+)
+
+logger = get_logger(__name__)
+
+
+class CreateNotificationUseCase:
+    """Use case для создания уведомления."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ):
+        self._database = database
+        self._repository = repository
+
+    @log(logger)
+    async def execute(
+        self,
+        message: TaskNotificationMessage,
+    ) -> NotificationSchema:
+        """Создать уведомление из события задачи."""
+        notification = CreateNotification(
+            task_id=message.task_id,
+            recipient=message.assignee or "unknown",
+            notification_type=NotificationType.TASK_CREATED,
+            title=f"Task event: {message.event_type}",
+            message=message.model_dump_json(),
+        )
+
+        async with self._database.session() as session:
+            created = await self._repository.create_notification(session, notification)
+
+        return created
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/get_notification_by_id.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use case для получения уведомления по ID."""
+
+from task_notification.core.exceptions.notifications import NotificationNotFoundException
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.schemas.notification import NotificationSchema
+
+logger = get_logger(__name__)
+
+
+class GetNotificationByIdUseCase:
+    """Use case для получения уведомления по ID."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ):
+        self._database = database
+        self._repository = repository
+
+    @log(logger)
+    async def execute(self, notification_id: int) -> NotificationSchema:
+        """Получить уведомление по ID."""
+        async with self._database.session() as session:
+            notification = await self._repository.get_notification_by_id(session, notification_id)
+
+        if not notification:
+            raise NotificationNotFoundException(notification_id)
+
+        return notification
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/get_notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.schemas.notification import NotificationFilters, NotificationSchema
+
+logger = get_logger(__name__)
+
+
+class GetNotificationsUseCase:
+    """Use case для получения уведомлений."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ):
+        self._database = database
+        self._repository = repository
+
+    @log(logger)
+    async def execute(
+        self,
+        filters: NotificationFilters,
+    ) -> tuple[list[NotificationSchema], int]:
+        """Получить список уведомлений с фильтрацией."""
+        async with self._database.session() as session:
+            return await self._repository.get_all_notifications(session=session, filters=filters)
+
+    @log(logger)
+    async def get_by_id(self, notification_id: int) -> NotificationSchema:
+        """Получить уведомление по ID."""
+        async with self._database.session() as session:
+            return await self._repository.get_one_notification(session, notification_id)
+
+    @log(logger)
+    async def mark_as_read(self, notification_id: int) -> NotificationSchema:
+        """Пометить уведомление как прочитанное."""
+        async with self._database.session() as session:
+            return await self._repository.mark_notification_as_read(session, notification_id)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/send_pending_notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use case для отправки pending уведомлений."""
+
+import json
+from typing import Optional
+
+from task_notification.core.exceptions.notifications import NotificationSendError
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.email.email_service import EmailService
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.schemas.notification import NotificationSchema, NotificationStatus
+
+logger = get_logger(__name__)
+
+
+class SendPendingNotificationsUseCase:
+    """Use case для отправки всех pending уведомлений."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+        email_service: EmailService,
+    ):
+        self._database = database
+        self._repository = repository
+        self._email_service = email_service
+
+    @log(logger)
+    async def execute(self) -> dict:
+        """Получить все pending уведомления и отправить их."""
+        async with self._database.session() as session:
+            pending = await self._repository.get_pending_notifications(session, limit=100)
+
+        if not pending:
+            logger.info("No pending notifications to send")
+            return {"sent": 0, "failed": 0}
+
+        logger.info(f"Found {len(pending)} pending notifications")
+
+        sent_count = 0
+        failed_count = 0
+
+        for notification in pending:
+            try:
+                await self._send_notification(notification)
+                
+                async with self._database.session() as session:
+                    await self._repository.update_notification_status(
+                        session,
+                        notification.id,
+                        NotificationStatus.SENT,
+                    )
+                
+                sent_count += 1
+                logger.info(f"Notification {notification.id} sent successfully")
+
+            except Exception as e:
+                failed_count += 1
+                error_msg = str(e)
+                logger.error(f"Failed to send notification {notification.id}: {error_msg}")
+
+                try:
+                    async with self._database.session() as session:
+                        await self._repository.update_notification_status(
+                            session,
+                            notification.id,
+                            NotificationStatus.FAILED,
+                            error_message=error_msg,
+                        )
+                except Exception:
+                    logger.exception(f"Failed to update notification {notification.id} status")
+
+        logger.info(f"Sent {sent_count} notifications, {failed_count} failed")
+        return {"sent": sent_count, "failed": failed_count}
+
+    async def _send_notification(self, notification: NotificationSchema) -> None:
+        """Отправить одно уведомление."""
+        try:
+            message_data = json.loads(notification.message)
+        except json.JSONDecodeError:
+            message_data = {}
+
+        task_title = message_data.get("task_title", "Unknown Task")
+        task_description = message_data.get("task_description", "No description provided")
+        event_type = message_data.get("event_type", notification.notification_type)
+        task_status = message_data.get("status")
+        task_priority = message_data.get("priority")
+        task_id = notification.task_id or 0
+
+        await self._email_service.send_task_notification(
+            recipient=notification.recipient,
+            task_id=task_id,
+            task_title=task_title,
+            task_description=task_description,
+            event_type=event_type,
+            task_status=task_status,
+            task_priority=task_priority,
+        )
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/domain/use_cases/update_notification_status.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Use case для обновления статуса уведомления."""
+
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.postgres.database import Database
+from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.schemas.notification import NotificationSchema, NotificationStatus
+
+logger = get_logger(__name__)
+
+
+class UpdateNotificationStatusUseCase:
+    """Use case для обновления статуса уведомления."""
+
+    def __init__(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ):
+        self._database = database
+        self._repository = repository
+
+    @log(logger)
+    async def execute(
+        self,
+        notification_id: int,
+        status: NotificationStatus,
+        error_message: str | None = None,
+    ) -> NotificationSchema:
+        """Обновить статус уведомления."""
+        async with self._database.session() as session:
+            updated = await self._repository.update_notification_status(
+                session,
+                notification_id,
+                status,
+                error_message,
+            )
+
+        return updated
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/email/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/email/email_service.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""Email service for sending notifications."""
+
+from email.message import EmailMessage
+from typing import Final
+
+from aiosmtplib import SMTP, SMTPException
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt
+
+from task_notification.core.config import settings
+from task_notification.core.exceptions.base import BaseServiceException
+from task_notification.core.logger import get_logger, log
+
+logger = get_logger(__name__)
+
+
+class EmailSendError(BaseServiceException):
+    """Ошибка отправки email."""
+
+    def __init__(self, recipient: str, error: str):
+        super().__init__(f"Failed to send email to {recipient}: {error}")
+
+
+class EmailService:
+    """Сервис для отправки email уведомлений через SMTP."""
+
+    _MAX_RETRIES: Final[int] = 3
+    _SMTP_ERRORS: Final[tuple] = (SMTPException, ConnectionError, TimeoutError, OSError)
+
+    def __init__(self):
+        self._smtp_host = settings.SMTP_HOST
+        self._smtp_port = settings.SMTP_PORT
+        self._smtp_username = settings.SMTP_USERNAME
+        self._smtp_password = settings.SMTP_PASSWORD
+        self._from_email = settings.SMTP_FROM_EMAIL
+        self._use_tls = settings.SMTP_USE_TLS
+        self._start_tls = settings.SMTP_START_TLS
+
+    @log(logger)
+    async def send_task_notification(
+        self,
+        recipient: str,
+        task_id: int,
+        task_title: str,
+        task_description: str,
+        event_type: str,
+        task_status: str | None = None,
+        task_priority: str | None = None,
+    ) -> None:
+        """
+        Отправить email уведомление о событии задачи.
+
+        Args:
+            recipient: Email получателя
+            task_id: ID задачи
+            task_title: Название задачи
+            task_description: Описание задачи
+            event_type: Тип события (created, updated, deleted)
+            task_status: Статус задачи (опционально)
+            task_priority: Приоритет задачи (опционально)
+
+        Raises:
+            EmailSendError: Если не удалось отправить письмо
+        """
+        message = self._build_message(
+            recipient=recipient,
+            task_id=task_id,
+            task_title=task_title,
+            task_description=task_description,
+            event_type=event_type,
+            task_status=task_status,
+            task_priority=task_priority,
+        )
+
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(self._MAX_RETRIES),
+            retry=retry_if_exception_type(self._SMTP_ERRORS),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    await self._send_email(message)
+                    logger.info(
+                        f"Email sent successfully to {recipient} "
+                        f"for task {task_id} ({event_type})"
+                    )
+                except self._SMTP_ERRORS as e:
+                    error_msg = str(e)
+                    logger.error(f"SMTP error: {error_msg}")
+                    raise EmailSendError(recipient, error_msg)
+
+    async def _send_email(self, message: EmailMessage) -> None:
+        """Отправить email через SMTP."""
+        smtp = SMTP(
+            hostname=self._smtp_host,
+            port=self._smtp_port,
+            username=self._smtp_username,
+            password=self._smtp_password,
+            use_tls=self._use_tls,
+            start_tls=self._start_tls,
+        )
+
+        async with smtp:
+            await smtp.send_message(message)
+
+    def _build_message(
+        self,
+        recipient: str,
+        task_id: int,
+        task_title: str,
+        task_description: str,
+        event_type: str,
+        task_status: str | None = None,
+        task_priority: str | None = None,
+    ) -> EmailMessage:
+        """Сформировать email сообщение."""
+        message = EmailMessage()
+        message["From"] = self._from_email
+        message["To"] = recipient
+        message["Subject"] = self._build_subject(event_type, task_title)
+
+        # Plain text content
+        text_content = self._build_text_content(
+            task_id=task_id,
+            task_title=task_title,
+            task_description=task_description,
+            event_type=event_type,
+            task_status=task_status,
+            task_priority=task_priority,
+        )
+        message.set_content(text_content)
+
+        # HTML content
+        html_content = self._build_html_content(
+            task_id=task_id,
+            task_title=task_title,
+            task_description=task_description,
+            event_type=event_type,
+            task_status=task_status,
+            task_priority=task_priority,
+        )
+        message.add_alternative(html_content, subtype="html")
+
+        return message
+
+    def _build_subject(self, event_type: str, task_title: str) -> str:
+        """Сформировать тему письма."""
+        event_labels = {
+            "created": "📝 New Task Created",
+            "updated": "✏️ Task Updated",
+            "deleted": "🗑️ Task Deleted",
+        }
+        label = event_labels.get(event_type, f"Task {event_type.title()}")
+        return f"{label}: {task_title}"
+
+    def _build_text_content(
+        self,
+        task_id: int,
+        task_title: str,
+        task_description: str,
+        event_type: str,
+        task_status: str | None,
+        task_priority: str | None,
+    ) -> str:
+        """Сформировать текстовое содержимое письма."""
+        lines = [
+            f"Task {event_type.upper()}",
+            "",
+            f"Task ID: {task_id}",
+            f"Title: {task_title}",
+            "",
+            "Description:",
+            task_description,
+            "",
+        ]
+
+        if task_status:
+            lines.append(f"Status: {task_status}")
+        if task_priority:
+            lines.append(f"Priority: {task_priority}")
+
+        lines.extend([
+            "",
+            "---",
+            "Task Manager Notification System",
+        ])
+
+        return "\n".join(lines)
+
+    def _build_html_content(
+        self,
+        task_id: int,
+        task_title: str,
+        task_description: str,
+        event_type: str,
+        task_status: str | None,
+        task_priority: str | None,
+    ) -> str:
+        """Сформировать HTML содержимое письма."""
+        event_colors = {
+            "created": "#4CAF50",
+            "updated": "#2196F3",
+            "deleted": "#F44336",
+        }
+        color = event_colors.get(event_type, "#9E9E9E")
+
+        status_html = f'<p><strong>Status:</strong> {task_status}</p>' if task_status else ""
+        priority_html = f'<p><strong>Priority:</strong> {task_priority}</p>' if task_priority else ""
+
+        return f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                    <h2 style="color: {color}; border-bottom: 2px solid {color}; padding-bottom: 10px;">
+                        Task {event_type.title()}
+                    </h2>
+                    <div style="margin: 20px 0;">
+                        <p><strong>Task ID:</strong> {task_id}</p>
+                        <p><strong>Title:</strong> {task_title}</p>
+                        <div style="background: #f5f5f5; padding: 15px; border-left: 4px solid {color}; margin: 15px 0;">
+                            <strong>Description:</strong><br>
+                            <span style="white-space: pre-wrap;">{task_description}</span>
+                        </div>
+                        {status_html}
+                        {priority_html}
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                    <p style="color: #999; font-size: 12px; text-align: center;">
+                        Task Manager Notification System
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/postgres/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/postgres/base.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from sqlalchemy.orm import DeclarativeBase
+
+from task_notification.core.config import settings
+
+
+class Base(DeclarativeBase):
+    __table_args__ = {"schema": settings.POSTGRES_SCHEMA}
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/postgres/database.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from task_notification.core.config import settings
+
+
+class Database:
+    def __init__(self, url: str) -> None:
+        self._engine = create_async_engine(
+            url,
+            pool_size=settings.MIN_POOL_SIZE,
+            max_overflow=settings.MAX_POOL_SIZE - settings.MIN_POOL_SIZE,
+            pool_pre_ping=True,
+        )
+        self._session_factory = async_sessionmaker(
+            bind=self._engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+
+    @asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        session = self._session_factory()
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+    async def close(self) -> None:
+        await self._engine.dispose()
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/postgres/models.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from task_notification.infrastructure.postgres.base import Base
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    notification_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default="pending",
+        server_default="pending",
+    )
+    recipient: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
+    )
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/postgres/repository.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from typing import Type
+
+from sqlalchemy import and_, func, insert, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from task_notification.core.exceptions.notifications import NotificationNotFoundException
+from task_notification.core.logger import get_logger, log
+from task_notification.infrastructure.postgres.models import Notification
+from task_notification.schemas.notification import (
+    CreateNotification,
+    NotificationFilters,
+    NotificationSchema,
+    NotificationStatus,
+)
+
+logger = get_logger(__name__)
+
+
+class NotificationRepository:
+    """Репозиторий для работы с уведомлениями."""
+
+    _notifications_collection: Type[Notification] = Notification
+
+    @log(logger)
+    async def get_one_notification(
+        self,
+        session: AsyncSession,
+        notification_id: int,
+    ) -> NotificationSchema:
+        query = select(self._notifications_collection).where(
+            self._notifications_collection.id == notification_id
+        )
+        db_row = await session.scalar(query)
+        if not db_row:
+            raise NotificationNotFoundException(notification_id)
+        return NotificationSchema.model_validate(db_row)
+
+    @log(logger)
+    async def get_all_notifications(
+        self,
+        session: AsyncSession,
+        filters: NotificationFilters,
+    ) -> tuple[list[NotificationSchema], int]:
+        query_filters = self._build_filters(filters)
+
+        query = (
+            select(self._notifications_collection)
+            .where(and_(*query_filters))
+            .limit(filters.limit)
+            .offset(filters.offset)
+            .order_by(self._notifications_collection.created_at.desc())
+        )
+
+        db_rows = await session.scalars(query)
+
+        count_query = select(func.count(self._notifications_collection.id.distinct())).where(
+            and_(*query_filters)
+        )
+        total = await session.scalar(count_query)
+
+        return [NotificationSchema.model_validate(obj=obj) for obj in db_rows.all()], total or 0
+
+    @log(logger)
+    async def create_notification(
+        self,
+        session: AsyncSession,
+        notification: CreateNotification,
+    ) -> NotificationSchema:
+        values = notification.model_dump()
+        values["notification_type"] = notification.notification_type.value
+        query = insert(self._notifications_collection).values(values).returning(self._notifications_collection)
+        result = await session.scalar(query)
+        await session.flush()
+        return NotificationSchema.model_validate(result)
+
+    @log(logger)
+    async def update_notification_status(
+        self,
+        session: AsyncSession,
+        notification_id: int,
+        status: NotificationStatus,
+        error_message: str | None = None,
+    ) -> NotificationSchema:
+        values = {"status": status.value}
+        if status == NotificationStatus.SENT:
+            values["sent_at"] = datetime.utcnow()
+        if error_message:
+            values["error_message"] = error_message
+
+        query = (
+            update(self._notifications_collection)
+            .where(self._notifications_collection.id == notification_id)
+            .values(values)
+            .returning(self._notifications_collection)
+        )
+
+        result = await session.scalar(query)
+
+        if result is None:
+            raise NotificationNotFoundException(notification_id)
+
+        await session.flush()
+
+        return NotificationSchema.model_validate(result)
+
+    @log(logger)
+    async def mark_notification_as_read(
+        self,
+        session: AsyncSession,
+        notification_id: int,
+    ) -> NotificationSchema:
+        query = (
+            update(self._notifications_collection)
+            .where(self._notifications_collection.id == notification_id)
+            .values(is_read=True)
+            .returning(self._notifications_collection)
+        )
+
+        result = await session.scalar(query)
+
+        if result is None:
+            raise NotificationNotFoundException(notification_id)
+
+        await session.flush()
+
+        return NotificationSchema.model_validate(result)
+
+    def _build_filters(self, filters: NotificationFilters) -> list:
+        """Построить фильтры для запроса."""
+        filters_list = []
+
+        if filters.task_id:
+            filters_list.append(self._notifications_collection.task_id == filters.task_id)
+
+        if filters.recipient:
+            filters_list.append(self._notifications_collection.recipient == filters.recipient)
+
+        if filters.notification_type:
+            filters_list.append(
+                self._notifications_collection.notification_type == filters.notification_type.value
+            )
+
+        if filters.status:
+            filters_list.append(self._notifications_collection.status == filters.status.value)
+
+        if filters.is_read is not None:
+            filters_list.append(self._notifications_collection.is_read == filters.is_read)
+
+        if filters.created_at_gte:
+            filters_list.append(self._notifications_collection.created_at >= filters.created_at_gte)
+
+        if filters.created_at_lte:
+            filters_list.append(self._notifications_collection.created_at <= filters.created_at_lte)
+
+        return filters_list
+
+    @log(logger)
+    async def get_total_notifications_count(self, session: AsyncSession) -> int:
+        query = select(func.count()).select_from(self._notifications_collection)
+        result = await session.scalar(query)
+        return result or 0
+
+    @log(logger)
+    async def get_notifications_count_by_status(self, session: AsyncSession) -> dict[str, int]:
+        query = (
+            select(self._notifications_collection.status, func.count(self._notifications_collection.id))
+            .group_by(self._notifications_collection.status)
+        )
+        result = await session.execute(query)
+        return {row[0]: row[1] for row in result.fetchall()}
+
+    @log(logger)
+    async def get_pending_notifications_count(self, session: AsyncSession) -> int:
+        query = (
+            select(func.count())
+            .select_from(self._notifications_collection)
+            .where(self._notifications_collection.status == NotificationStatus.PENDING.value)
+        )
+        result = await session.scalar(query)
+        return result or 0
+
+    @log(logger)
+    async def get_pending_notifications(
+        self,
+        session: AsyncSession,
+        limit: int = 100,
+    ) -> list[NotificationSchema]:
+        """Получить pending уведомления для отправки."""
+        query = (
+            select(self._notifications_collection)
+            .where(self._notifications_collection.status == NotificationStatus.PENDING.value)
+            .order_by(self._notifications_collection.created_at.asc())
+            .limit(limit)
+        )
+        result = await session.execute(query)
+        notifications = result.scalars().all()
+        return [NotificationSchema.model_validate(n) for n in notifications]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/rabbitmq/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/infrastructure/rabbitmq/config.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from task_notification.core.config import settings
+
+
+class RabbitMQConfig:
+    """Конфигурация RabbitMQ."""
+
+    def __init__(self) -> None:
+        self.username = settings.RABBITMQ_USER.get_secret_value()
+        self.password = settings.RABBITMQ_PASSWORD.get_secret_value()
+        self.host = settings.RABBITMQ_HOST
+        self.port = settings.RABBITMQ_PORT
+        self.exchange_name = settings.RABBITMQ_EXCHANGE
+        self.queue_name = settings.RABBITMQ_QUEUE
+        self.routing_key = settings.RABBITMQ_ROUTING_KEY
+        self.reconnect_interval = 5
+
+    def get_connect_options(self) -> dict:
+        return {
+            "host": self.host,
+            "port": self.port,
+            "login": self.username,
+            "password": self.password,
+        }
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/schemas/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/schemas/api/__init__.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/schemas/api/notifications.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
+from task_notification.schemas.api.pagination import PaginationAwareRequest
+from task_notification.schemas.notification import NotificationStatus, NotificationType
+
+
+class NotificationsRequest(PaginationAwareRequest):
+    """Запрос списка уведомлений с фильтрацией."""
+
+    task_id: Optional[int] = None
+    recipient: Optional[str] = None
+    notification_type: Optional[NotificationType] = None
+    status: Optional[NotificationStatus] = None
+    is_read: Optional[bool] = None
+    created_at_gte: Optional[datetime] = None
+    created_at_lte: Optional[datetime] = None
+
+
+class NotificationResponse(BaseModel):
+    """Ответ с данными уведомления."""
+
+    id: int
+    task_id: int
+    recipient: str
+    notification_type: NotificationType
+    title: str
+    message: str
+    status: NotificationStatus
+    is_read: bool
+    error_message: Optional[str]
+    created_at: datetime
+    sent_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/schemas/api/pagination.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from typing import Generic, List, TypeVar
+
+from fastapi import Query
+from pydantic import BaseModel, Field
+
+
+class PaginationAwareRequest(BaseModel):
+    """Базовый класс для запросов с пагинацией."""
+
+    limit: int = Query(100)
+    offset: int = Query(0)
+
+
+T = TypeVar("T")
+
+
+class Pagination(BaseModel, Generic[T]):
+    """
+    Pagination model.
+    
+    Wrap a generic list of items with skip, limit and counter.
+    """
+
+    limit: int = 10
+    offset: int = 0
+    count: int = 0
+    total: int = 0
+    items: List[T] = Field(default_factory=list)
+
+    def __init__(self, **data) -> None:  # type: ignore
+        data.setdefault("count", len(data.get("items", [])))
+        super().__init__(**data)
+
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 ./task_notification/src/task_notification/schemas/notification.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class NotificationStatus(str, Enum):
+    """Статусы уведомления."""
+
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+
+
+class NotificationType(str, Enum):
+    """Типы уведомлений."""
+
+    TASK_CREATED = "task_created"
+    TASK_UPDATED = "task_updated"
+    TASK_ASSIGNED = "task_assigned"
+    TASK_STATUS_CHANGED = "task_status_changed"
+    TASK_DELETED = "task_deleted"
+
+
+class BaseNotification(BaseModel):
+    """Базовая схема уведомления."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    task_id: int
+    recipient: str
+    notification_type: NotificationType
+    title: str
+    message: str
+
+
+class CreateNotification(BaseNotification):
+    """Схема для создания уведомления."""
+
+    pass
+
+
+class NotificationSchema(BaseNotification):
+    """Схема уведомления из БД."""
+
+    id: int
+    status: NotificationStatus
+    is_read: bool
+    error_message: Optional[str]
+    created_at: datetime
+    sent_at: Optional[datetime]
+
+
+# ======== Межслойные DTO (Filters) ========
+
+class NotificationFilters(BaseModel):
+    """Фильтры для получения уведомлений - межслойная DTO."""
+
+    limit: int
+    offset: int
+    task_id: Optional[int] = None
+    recipient: Optional[str] = None
+    notification_type: Optional[NotificationType] = None
+    status: Optional[NotificationStatus] = None
+    is_read: Optional[bool] = None
+    created_at_gte: Optional[datetime] = None
+    created_at_lte: Optional[datetime] = None
+
+
+# ======== RabbitMQ Messages ========
+
+class TaskNotificationMessage(BaseModel):
+    """Входящее сообщение из RabbitMQ о событии задачи."""
+
+    task_id: int
+    event_type: str
+    task_title: str
+    task_description: Optional[str] = None
+    assignee: Optional[str] = None
+    status: str
+    priority: str
+    created_by: str
+
+
