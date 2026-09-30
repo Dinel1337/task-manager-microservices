@@ -6,12 +6,14 @@ from redis.asyncio import Redis
 
 from task_service.core.config import settings
 from task_service.domain.metrics.use_case import GetTasksMetricsUseCase
-from task_service.domain.use_cases.create_task import CreateTaskUseCase
-from task_service.domain.use_cases.delete_task import DeleteTaskUseCase
-from task_service.domain.use_cases.get_tasks import GetTasksUseCase
-from task_service.domain.use_cases.update_task import UpdateTaskUseCase
+from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.task.delete_task import DeleteTaskUseCase
+from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.task.update_task import UpdateTaskUseCase
+from task_service.domain.use_cases.comments.create_comments import CreateCommentUseCase
+from task_service.domain.use_cases.comments.get_comments import GetCommentUseCase
 from task_service.infrastructure.postgres.database import Database
-from task_service.infrastructure.postgres.repository import TaskRepository
+from task_service.infrastructure.postgres.repository import TaskRepository, CommentRepository
 from task_service.infrastructure.rabbitmq.broker import broker
 from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
 from task_service.infrastructure.redis.repository import RedisRepository
@@ -60,6 +62,10 @@ class RepositoryProvider(Provider):
     @provide
     def get_task_repository(self) -> TaskRepository:
         return TaskRepository()
+
+    @provide
+    def get_comment_repository(self) -> CommentRepository:
+        return CommentRepository()
 
     @provide
     def get_redis_repository(self) -> RedisRepository:
@@ -117,6 +123,26 @@ class UseCaseProvider(Provider):
         kafka_publisher: KafkaPublisher,
     ) -> DeleteTaskUseCase:
         return DeleteTaskUseCase(database, repository, cache, kafka_publisher)
+
+    ## Новая область
+
+    @provide
+    def get_create_comment(
+        self,
+        database: Database,
+        task_repository: TaskRepository,
+        comment_repository: CommentRepository,
+    ) -> CreateCommentUseCase:
+        return CreateCommentUseCase(database, task_repository, comment_repository)
+
+    @provide
+    def get_get_comment(
+        self,
+        database: Database,
+        task_repository: TaskRepository,
+        comment_repository: CommentRepository,
+    ) -> GetCommentUseCase:
+        return GetCommentUseCase(database, task_repository, comment_repository)
 
 
 class MetricsProvider(Provider):

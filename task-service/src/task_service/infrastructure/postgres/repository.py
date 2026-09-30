@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
-from task_service.infrastructure.postgres.models import Task
+from task_service.infrastructure.postgres.models import Task, Comment
 from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask
+from task_service.schemas.comment import CommentCreate, CommentResponse
 
 logger = get_logger(__name__)
 
@@ -162,3 +163,36 @@ class TaskRepository:
         )
         result = await session.execute(query)
         return {row[0]: row[1] for row in result.fetchall()}
+
+
+class CommentRepository:
+    """Репозиторий для работы с коментариями."""
+
+    _comment_collection: Type[Comment] = Comment
+
+    @log(logger)
+    async def create_comment(
+        self,
+        session: AsyncSession,
+        task_id: int,
+        data: CommentCreate,
+    ) -> CommentResponse:
+        
+        values = {'task_id': task_id, **data.model_dump()}
+        query = insert(self._comment_collection).values(values).returning(self._comment_collection)
+        result = await session.scalar(query)
+        return CommentResponse.model_validate(result)
+
+    @log(logger)
+    async def get_comments_by_task(
+        self,
+        session:AsyncSession,
+        task_id: int
+    ) -> list[CommentResponse]:
+
+        results = (select(self._comment_collection)
+                   .where(self._comment_collection.task_id == task_id)
+                   .order_by(self._comment_collection.created_at.asc()))
+        
+        db_rows = await session.scalars(results)
+        return [CommentResponse.model_validate(obj) for obj in db_rows.all()]

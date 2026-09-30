@@ -1,6 +1,6 @@
 import pytest
 
-from task_service.domain.use_cases.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
 from task_service.schemas.task import CreateTask, TaskSchema
 from tests.helpers import TestDatabaseSessionWrapper
 from tests.mocks import MockedTaskRepository, MockedRedisRepository, MockedRabbitMQPublisher
