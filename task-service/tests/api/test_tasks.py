@@ -5,8 +5,8 @@ from httpx import AsyncClient
 from starlette import status
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
-from task_service.domain.use_cases.create_task import CreateTaskUseCase
-from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
 from task_service.schemas.task import TaskSchema
 from tests.conftest import override
 from tests.mocks import MockedUseCase

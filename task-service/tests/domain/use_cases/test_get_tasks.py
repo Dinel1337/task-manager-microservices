@@ -1,7 +1,7 @@
 import pytest
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
-from task_service.domain.use_cases.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
 from task_service.schemas.task import TaskFilters, TaskSchema
 from tests.helpers import TestDatabaseSessionWrapper
 from tests.mocks import MockedTaskRepository, MockedRedisRepository

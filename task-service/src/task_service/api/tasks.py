@@ -6,10 +6,10 @@ from starlette import status
 from task_service.api.depends import get_current_user
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
-from task_service.domain.use_cases.create_task import CreateTaskUseCase
-from task_service.domain.use_cases.delete_task import DeleteTaskUseCase
-from task_service.domain.use_cases.get_tasks import GetTasksUseCase
-from task_service.domain.use_cases.update_task import UpdateTaskUseCase
+from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
+from task_service.domain.use_cases.task.delete_task import DeleteTaskUseCase
+from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
+from task_service.domain.use_cases.task.update_task import UpdateTaskUseCase
 from task_service.schemas.api.pagination import Pagination
 from task_service.schemas.api.tasks import (
     CreateTaskRequestPayload,

@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, String, Text, func, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from task_service.infrastructure.postgres.base import Base
+from task_service.core.config import settings
 
 
 class Task(Base):
@@ -41,7 +42,7 @@ class Comment(Base):
     id : Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
     task_id : Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("tasks.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.POSTGRES_SCHEMA}.tasks.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -56,5 +57,3 @@ class Comment(Base):
         server_default=func.timezone("UTC", func.current_timestamp()),
         onupdate=func.timezone("UTC", func.current_timestamp()),
     )
-
-__all__ = ['Task', 'Comment']
