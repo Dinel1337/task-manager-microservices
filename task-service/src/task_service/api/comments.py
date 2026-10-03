@@ -5,7 +5,7 @@ from starlette import status
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
-from task_service.domain.use_cases.comments.create_comments import CreateCommentUseCase
+from task_service.domain.use_cases.comments.create_comment import CreateCommentUseCase
 from task_service.domain.use_cases.comments.get_comments import GetCommentUseCase
 from task_service.schemas.comment import CommentCreate, CommentResponse
 

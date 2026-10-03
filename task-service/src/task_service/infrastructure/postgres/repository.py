@@ -164,6 +164,15 @@ class TaskRepository:
         result = await session.execute(query)
         return {row[0]: row[1] for row in result.fetchall()}
 
+    @log(logger)
+    async def get_tasks_count_by_assignee(self, session: AsyncSession) -> dict[str, int]:
+        query = (
+            select(self._tasks_collection.assignee, func.count(self._tasks_collection.id))
+            .where(self._tasks_collection.assignee.isnot(None))
+            .group_by(self._tasks_collection.assignee)
+        )
+        result = await session.execute(query)
+        return {row[0]: row[1] for row in result.fetchall()} # у тебя были готовые 2, решил дописать еще 1
 
 class CommentRepository:
     """Репозиторий для работы с коментариями."""

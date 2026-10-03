@@ -84,6 +84,13 @@ class TaskFilters(BaseModel):
     created_at_gte: Optional[datetime] = None
     created_at_lte: Optional[datetime] = None
 
+class TaskStatistics(BaseModel):
+    """Статистика по задачам."""
+    total_tasks: int
+    by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+    by_assignee: dict[str, int] = {} # это 
+
 
 # ======== RabbitMQ Messages ========
 

@@ -5,11 +5,11 @@ from redis.asyncio import Redis
 
 from task_service.core.config import settings
 from task_service.core.logger import get_logger
-from task_service.schemas.task import TaskSchema
+from task_service.schemas.task import TaskSchema, TaskStatistics
 
 logger = get_logger(__name__)
 
-
+STATISTIC_KEY = 'statistic'
 class RedisRepository:
     """Redis репозиторий для кэширования задач."""
 
@@ -55,3 +55,22 @@ class RedisRepository:
     async def ping(self) -> Any:
         """Проверить соединение с Redis."""
         return await self._redis.ping()
+
+    # ============ СТАТИСТИКА =============
+
+    
+    async def get_statistics(self):
+        data = await self._redis.get(STATISTIC_KEY)
+        if not data:
+            return None
+        try:
+            return TaskStatistics.model_validate_json(data)
+        except ValidationError:
+            await self.delete_statistics()
+            return None
+    async def set_statistics(self, statistic: TaskStatistics, ex: int = 60):
+        ttl = ex or settings.REDIS_CACHE_TTL
+        await self._redis.set(STATISTIC_KEY, statistic.model_dump_json(), ex = ttl)
+    
+    async def delete_statistics(self) -> None:
+        await self._redis.delete(STATISTIC_KEY)
