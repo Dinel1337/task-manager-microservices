@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
+    REDIS_ARQ_DB: int = 2  
     REDIS_USERNAME: str | None = None
     REDIS_PASSWORD: str | None = None
     REDIS_CACHE_TTL: int = 300  # 5 минут
