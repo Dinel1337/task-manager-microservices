@@ -31,6 +31,7 @@ class TaskEventType(str, Enum):
     DELETED = "deleted"
     STATUS_CHANGED = "status_changed"
     ASSIGNED = "assigned"
+    PRIORITY_ESCALATED = 'PRIORITY_ESCALATED'.lower()
 
 
 class BaseTask(BaseModel):

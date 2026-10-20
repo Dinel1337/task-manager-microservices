@@ -10,6 +10,7 @@ from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
 from task_service.domain.use_cases.task.delete_task import DeleteTaskUseCase
 from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
 from task_service.domain.use_cases.task.update_task import UpdateTaskUseCase
+from task_service.domain.use_cases.task.auto_escalate_tasks import AutoEscalateTasksUseCase
 from task_service.domain.use_cases.statistics.get_statistic import GetTaskStatisticsUseCase
 from task_service.domain.use_cases.comments.create_comment import CreateCommentUseCase
 from task_service.domain.use_cases.comments.get_comments import GetCommentUseCase
@@ -153,6 +154,19 @@ class UseCaseProvider(Provider):
         cache: RedisRepository
     ) -> GetTaskStatisticsUseCase:
         return GetTaskStatisticsUseCase(database,task_repository, cache)
+    
+    @provide
+    def get_auto_escalate_tasks(
+        self,
+        database: Database,
+        repository: TaskRepository,
+        publisher: RabbitMQPublisher,
+        cache: RedisRepository,
+        kafka_publisher: KafkaPublisher,
+    ) -> AutoEscalateTasksUseCase:
+        return AutoEscalateTasksUseCase(
+            database, repository, publisher, cache, kafka_publisher
+        )
 
 
 class MetricsProvider(Provider):

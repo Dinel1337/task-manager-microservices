@@ -4,7 +4,7 @@ from arq.cron import cron
 from arq.connections import RedisSettings
 
 from task_service.core.config import settings
-# from task_notification.domain.tasks.send_pending_notifications import send_pending_notifications_task
+from task_service.domain.tasks.auto_escalate_tasks import auto_escalate_tasks
 
 
 class WorkerSettings:
@@ -18,5 +18,11 @@ class WorkerSettings:
     )
     allow_abort_jobs = True
     
-    # CRON задача - каждые 30 секунд
-    cron_jobs = ...
+    # CRON задача - ежедневно в 9 ПО УФЕ(потому что now я не настраивал utc)
+    cron_jobs = [
+        cron(
+            auto_escalate_tasks,
+            name="auto_escalate_tasks",
+            second={0, 30},
+        ),
+]

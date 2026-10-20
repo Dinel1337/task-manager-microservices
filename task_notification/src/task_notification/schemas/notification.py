@@ -21,7 +21,7 @@ class NotificationType(str, Enum):
     TASK_ASSIGNED = "task_assigned"
     TASK_STATUS_CHANGED = "task_status_changed"
     TASK_DELETED = "task_deleted"
-
+    TASK_PRIORITY_ESCALATED = "task_priority_escalated"
 
 class BaseNotification(BaseModel):
     """Базовая схема уведомления."""

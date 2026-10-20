@@ -145,11 +145,14 @@ class EmailService:
     def _build_subject(self, event_type: str, task_title: str) -> str:
         """Сформировать тему письма."""
         event_labels = {
-            "created": "📝 New Task Created",
-            "updated": "✏️ Task Updated",
-            "deleted": "🗑️ Task Deleted",
-        }
-        label = event_labels.get(event_type, f"Task {event_type.title()}")
+        "created": "📝 New Task Created",
+        "updated": "✏️ Task Updated",
+        "deleted": "🗑️ Task Deleted",
+        "assigned": "Task Assigned",
+        "status_changed": "Task Status Changed",
+        "priority_escalated": "Task Priority Escalated",
+    }
+        label = event_labels.get(event_type, f"Task {event_type.replace('_', ' ').title()}")
         return f"{label}: {task_title}"
 
     def _build_text_content(
@@ -197,9 +200,12 @@ class EmailService:
     ) -> str:
         """Сформировать HTML содержимое письма."""
         event_colors = {
-            "created": "#4CAF50",
-            "updated": "#2196F3",
-            "deleted": "#F44336",
+            "created": "#4CAF50",      # зелёный
+            "updated": "#2196F3",      # синий
+            "deleted": "#F44336",      # красный
+            "assigned": "#9C27B0",     # фиолетовый
+            "status_changed": "#FF9800",  # оранжевый
+            "priority_escalated": "#FF5722",  # тёмно-оранжевый (внимание)
         }
         color = event_colors.get(event_type, "#9E9E9E")
 

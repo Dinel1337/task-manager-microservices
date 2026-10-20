@@ -12,6 +12,14 @@ from task_notification.schemas.notification import (
 
 logger = get_logger(__name__)
 
+_EVENT_TO_TYPE: dict[str, NotificationType] = {
+    "created": NotificationType.TASK_CREATED,
+    "updated": NotificationType.TASK_UPDATED,
+    "assigned": NotificationType.TASK_ASSIGNED,
+    "status_changed": NotificationType.TASK_STATUS_CHANGED,
+    "deleted": NotificationType.TASK_DELETED,
+    "priority_escalated": NotificationType.TASK_PRIORITY_ESCALATED,
+}
 
 class CreateNotificationUseCase:
     """Use case для создания уведомления."""
@@ -30,10 +38,16 @@ class CreateNotificationUseCase:
         message: TaskNotificationMessage,
     ) -> NotificationSchema:
         """Создать уведомление из события задачи."""
+
+        notification_type = _EVENT_TO_TYPE.get(
+            message.event_type,
+            NotificationType.TASK_UPDATED,
+        )
+
         notification = CreateNotification(
             task_id=message.task_id,
             recipient=message.assignee or "unknown",
-            notification_type=NotificationType.TASK_CREATED,
+            notification_type=notification_type,
             title=f"Task event: {message.event_type}",
             message=message.model_dump_json(),
         )

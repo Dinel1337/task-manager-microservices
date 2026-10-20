@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta 
 from typing import Type
 
 from sqlalchemy import and_, delete, func, insert, or_, select, update
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
 from task_service.infrastructure.postgres.models import Task, Comment
-from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask
+from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask, TaskPriority, TaskStatus
 from task_service.schemas.comment import CommentCreate, CommentResponse
 
 logger = get_logger(__name__)
@@ -173,6 +173,28 @@ class TaskRepository:
         )
         result = await session.execute(query)
         return {row[0]: row[1] for row in result.fetchall()} # у тебя были готовые 2, решил дописать еще 1
+
+    @log(logger)
+    async def get_stale_pending_tasks(
+        self,
+        session: AsyncSession,
+        days: int = 3,
+    ) -> list[TaskSchema]:
+        """Найти задачи в статусе todo дольше N дней с приоритетом ниже high"""
+        threshold = datetime.now() - timedelta(days=days)
+        query = (
+            select(self._tasks_collection)
+            .where(
+                self._tasks_collection.status == TaskStatus.TODO.value,
+                self._tasks_collection.updated_at < threshold,
+                self._tasks_collection.priority.in_([
+                    TaskPriority.LOW.value,
+                    TaskPriority.MEDIUM.value,
+                ]),
+            )
+        )
+        result = await session.execute(query)
+        return [TaskSchema.model_validate(obj) for obj in result.scalars().all()]
 
 class CommentRepository:
     """Репозиторий для работы с коментариями."""
