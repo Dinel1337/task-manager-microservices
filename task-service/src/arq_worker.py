@@ -5,7 +5,13 @@ from arq.connections import RedisSettings
 
 from task_service.core.config import settings
 from task_service.domain.tasks.auto_escalate_tasks import auto_escalate_tasks
+from task_service.infrastructure.rabbitmq.broker import broker
 
+async def startup(ctx):
+    await broker.connect()
+
+async def shutdown(ctx):
+    await broker.close()
 
 class WorkerSettings:
     """Настройки ARQ Worker с CRON."""
@@ -16,9 +22,13 @@ class WorkerSettings:
         database=settings.REDIS_ARQ_DB,
         password=settings.REDIS_PASSWORD,
     )
+
     allow_abort_jobs = True
+    on_startup = startup
+    on_shutdown = shutdown 
+
+    # CRON задача - ежедневно в 9
     
-    # CRON задача - ежедневно в 9 ПО УФЕ(потому что now я не настраивал utc)
     cron_jobs = [
         cron(
             auto_escalate_tasks,

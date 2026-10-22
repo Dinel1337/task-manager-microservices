@@ -172,7 +172,7 @@ class EmailService:
             f"Title: {task_title}",
             "",
             "Description:",
-            task_description,
+            task_description or "(no description)",
             "",
         ]
 
@@ -205,7 +205,7 @@ class EmailService:
             "deleted": "#F44336",      # красный
             "assigned": "#9C27B0",     # фиолетовый
             "status_changed": "#FF9800",  # оранжевый
-            "priority_escalated": "#FF5722",  # тёмно-оранжевый (внимание)
+            "priority_escalated": "#FF5722",  # тёмно-оранжевый
         }
         color = event_colors.get(event_type, "#9E9E9E")
 

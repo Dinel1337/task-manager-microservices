@@ -16,7 +16,7 @@ ENV/
 *.swo
 
 # Environment
-.env
+
 *.env.local
 
 # Docker

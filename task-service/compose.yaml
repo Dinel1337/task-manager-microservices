@@ -34,7 +34,7 @@ services:
       - env/postgres.env
       - env/rabbitmq.env
       - env/redis.env
-      - env/kafka.env # если у тебя Kafka вынесена в отдельный env
+      - env/kafka.env
     networks:
       - tasks
     build:
