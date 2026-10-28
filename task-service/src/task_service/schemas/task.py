@@ -4,7 +4,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-
 class TaskStatus(str, Enum):
     """Статусы задачи."""
 
@@ -32,6 +31,7 @@ class TaskEventType(str, Enum):
     STATUS_CHANGED = "status_changed"
     ASSIGNED = "assigned"
     PRIORITY_ESCALATED = 'PRIORITY_ESCALATED'.lower()
+
 
 
 class BaseTask(BaseModel):
@@ -68,6 +68,7 @@ class TaskSchema(BaseTask):
     created_by: str
     created_at: datetime
     updated_at: datetime
+
 
 
 # ======== Межслойные DTO (Filters) ========

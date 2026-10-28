@@ -40,8 +40,9 @@ services:
     build:
       context: .
     pull_policy: build
-    command: ["arq", "arq_worker.WorkerSettings"]
+    command: ["python", "-m", "arq", "arq_worker.WorkerSettings"]
 
 networks:
   tasks:
     external: true
+    name: tasks

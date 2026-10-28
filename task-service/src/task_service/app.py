@@ -9,6 +9,7 @@ from task_service.api.metrics import metrics_router
 from task_service.api.tasks import tasks_router
 from task_service.api.statistic import statistic_router
 from task_service.api.comments import comments_router
+from task_service.api.export import csv_router
 from task_service.core.config import settings
 from task_service.core.providers.setup import container
 from task_service.domain.metrics.registry_metrics import setup_metrics
@@ -47,10 +48,10 @@ def create_app() -> FastAPI:
 
     # Роутеры
     app.include_router(statistic_router, prefix="/api/v1", tags=["Statistic"])
-
-
-    app.include_router(tasks_router, prefix="/api/v1", tags=["Tasks"])
+    app.include_router(csv_router, prefix="/api/v1", tags=["Export"])
     app.include_router(comments_router, prefix="/api/v1", tags=["Comments"])
+    
+    app.include_router(tasks_router, prefix="/api/v1", tags=["Tasks"])
     app.include_router(health_check_router)
     app.include_router(metrics_router)
 

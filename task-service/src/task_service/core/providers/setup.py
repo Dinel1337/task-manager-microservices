@@ -14,6 +14,7 @@ from task_service.domain.use_cases.task.auto_escalate_tasks import AutoEscalateT
 from task_service.domain.use_cases.statistics.get_statistic import GetTaskStatisticsUseCase
 from task_service.domain.use_cases.comments.create_comment import CreateCommentUseCase
 from task_service.domain.use_cases.comments.get_comments import GetCommentUseCase
+from task_service.domain.use_cases.export.export_tasks import ExportTasksToCSVUseCase
 from task_service.infrastructure.postgres.database import Database
 from task_service.infrastructure.postgres.repository import TaskRepository, CommentRepository
 from task_service.infrastructure.rabbitmq.broker import broker
@@ -125,6 +126,13 @@ class UseCaseProvider(Provider):
         kafka_publisher: KafkaPublisher,
     ) -> DeleteTaskUseCase:
         return DeleteTaskUseCase(database, repository, cache, kafka_publisher)
+
+    @provide
+    def get_export_tasks_to_csv(
+        self,
+        use_case: GetTasksUseCase
+    ) -> ExportTasksToCSVUseCase:
+        return ExportTasksToCSVUseCase(use_case)
 
     ## Новая область
 

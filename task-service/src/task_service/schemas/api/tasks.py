@@ -3,10 +3,14 @@ from typing import Optional
 
 from fastapi import Query
 from pydantic import BaseModel, Field
+from enum import Enum
 
 from task_service.schemas.api.pagination import PaginationAwareRequest
 from task_service.schemas.task import TaskPriority, TaskStatus
 
+
+class ExportFormat(str, Enum):
+    CSV = "csv"
 
 class TasksRequest(PaginationAwareRequest):
     """Запрос списка задач с фильтрацией."""
@@ -64,3 +68,10 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ExportTasksRequest(TasksRequest):
+    """Запрос на экспорт задач."""
+    format: ExportFormat = Field(
+        default=ExportFormat.CSV,
+        description="Формат экспорта. Пока поддерживается только CSV",
+    )

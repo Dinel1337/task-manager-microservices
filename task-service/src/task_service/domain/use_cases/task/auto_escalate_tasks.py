@@ -14,7 +14,6 @@ from task_service.schemas.task import (
 
 logger = get_logger(__name__)
 
-
 class AutoEscalateTasksUseCase:
     """Use case для автоматического повышения приоритетов задач."""
 

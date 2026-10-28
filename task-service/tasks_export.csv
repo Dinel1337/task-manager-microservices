@@ -1,0 +1,7 @@
+﻿id,title,status,priority,assignee,created_at,updated_at
+6,Implement feature,todo,high,developer@example.com,2026-10-27T23:59:04.308475,2026-10-27T23:59:04.308475
+5,Implement feature,todo,high,developer@example.com,2026-10-27T23:59:04.081637,2026-10-27T23:59:04.081637
+4,Implement feature,todo,high,developer@example.com,2026-10-27T23:59:03.841711,2026-10-27T23:59:03.841711
+3,Implement feature,todo,high,developer@example.com,2026-10-27T23:59:03.555578,2026-10-27T23:59:03.555578
+2,Implement feature,todo,high,developer@example.com,2026-10-27T23:59:02.605042,2026-10-27T23:59:02.605042
+1,Implement feature,todo,high,developer@example.com,2026-10-27T23:58:48.774496,2026-10-27T23:58:48.774496
