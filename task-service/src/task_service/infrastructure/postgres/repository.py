@@ -3,10 +3,11 @@ from typing import Type
 
 from sqlalchemy import and_, delete, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
-from task_service.infrastructure.postgres.models import Task, TaskHistory ,Comment
+from task_service.infrastructure.postgres.models import Task, TaskHistory ,Comment, TaskAssignees
 from task_service.schemas.history import TaskHistoryFilters, TaskHistorySchema
 from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask, TaskPriority, TaskStatus
 from task_service.schemas.comment import CommentCreate, CommentResponse
@@ -19,17 +20,48 @@ class TaskRepository:
 
     _tasks_collection: Type[Task] = Task
 
+    def _task_to_schema(self, task: Task) -> TaskSchema:
+        """Конвертировать ORM-модель в Pydantic-схему, развернув assignees в list[str]."""
+        schema = TaskSchema.model_validate(task)
+
+        schema.assignees = [a.assignee_email for a in task.assignees]
+        return schema
+    
+    async def _sync_assignees(
+        self,
+        session: AsyncSession,
+        task_id: int,
+        assignees: list[str],
+    ) -> None:
+        """Полностью заменить assignees у задачи."""
+        
+        await session.execute(
+            delete(TaskAssignees).where(TaskAssignees.task_id == task_id)
+        )
+        
+        if assignees:
+            session.add_all([
+                TaskAssignees(task_id=task_id, assignee_email=email)
+                for email in assignees
+            ])
+        await session.flush()
+
+
     @log(logger)
     async def get_one_task(
         self,
         session: AsyncSession,
         task_id: int,
     ) -> TaskSchema:
-        query = select(self._tasks_collection).where(self._tasks_collection.id == task_id)
+        query = (select(self._tasks_collection)
+                 .options(selectinload(self._tasks_collection.assignees))
+                 .where(self._tasks_collection.id == task_id))
+        
         db_row = await session.scalar(query)
         if not db_row:
             raise TaskNotFoundException(task_id)
-        return TaskSchema.model_validate(db_row)
+        
+        return self._task_to_schema(db_row)
 
     @log(logger)
     async def get_all_tasks(
@@ -41,6 +73,7 @@ class TaskRepository:
 
         query = (
             select(self._tasks_collection)
+            .options(selectinload(self._tasks_collection.assignees))
             .where(and_(*query_filters))
             .limit(filters.limit)
             .offset(filters.offset)
@@ -52,8 +85,7 @@ class TaskRepository:
         count_query = select(func.count(self._tasks_collection.id.distinct())).where(and_(*query_filters))
         total = await session.scalar(count_query)
 
-        #list comprehension
-        return [TaskSchema.model_validate(obj=obj) for obj in db_rows.all()], total or 0
+        return [self._task_to_schema(obj) for obj in db_rows.all()], total or 0
 
     @log(logger)
     async def create_task(
@@ -61,12 +93,20 @@ class TaskRepository:
         session: AsyncSession,
         task: CreateTask,
     ) -> TaskSchema:
-        values = task.model_dump()
-        query = insert(self._tasks_collection).values(values).returning(self._tasks_collection)
+        assignees = task.assignees or ([task.assignee] if task.assignee else [])
+        task_values = task.model_dump(exclude={"assignees"})
+        
+        if not task_values.get("assignee") and assignees:
+            task_values["assignee"] = assignees[0]
+
+        query = insert(self._tasks_collection).values(task_values).returning(self._tasks_collection)
         result = await session.scalar(query)
         await session.flush()
-        return TaskSchema.model_validate(result)
 
+        await self._sync_assignees(session,result.id,assignees)
+
+        return await self.get_one_task(session,result.id)
+    
     @log(logger)
     async def update_task(
         self,
@@ -75,6 +115,12 @@ class TaskRepository:
         task: UpdateTask,
     ) -> TaskSchema:
         values = task.model_dump(exclude_unset=True, exclude_none=True)
+
+        new_assignees = values.pop("assignees", None)
+
+        if "assignee" in values and new_assignees is None:
+            new_assignees = [values["assignee"]] if values["assignee"] else []
+
         values["updated_at"] = datetime.utcnow()
 
         query = (
@@ -91,7 +137,18 @@ class TaskRepository:
 
         await session.flush()
 
-        return TaskSchema.model_validate(result)
+        if new_assignees is not None:
+            await self._sync_assignees(session,task_id,new_assignees)
+
+            first_assignee = new_assignees[0] if new_assignees else None
+            await session.execute(
+                update(self._tasks_collection)
+                .where(self._tasks_collection.id == task_id)
+                .values(assignee=first_assignee)
+            )
+            await session.flush()
+
+        return await self.get_one_task(session, task_id)
 
     @log(logger)
     async def delete_task(
@@ -195,7 +252,7 @@ class TaskRepository:
             )
         )
         result = await session.execute(query)
-        return [TaskSchema.model_validate(obj) for obj in result.scalars().all()]
+        return [self._task_to_schema(obj) for obj in result.scalars().all()]
 
     @log(logger)
     async def save_history(

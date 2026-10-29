@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, String, Text, func, ForeignKey, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
 from task_service.infrastructure.postgres.base import Base
@@ -38,6 +38,13 @@ class Task(Base):
     )
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
+
+    assignees: Mapped[list["TaskAssignee"]] = relationship(
+        "TaskAssignee",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+
 class TaskHistory(Base):
     __tablename__ = 'task_history'
     id : Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
@@ -70,4 +77,17 @@ class Comment(Base):
         DateTime(timezone=False),
         server_default=func.timezone("UTC", func.current_timestamp()),
         onupdate=func.timezone("UTC", func.current_timestamp()),
+    )
+
+class TaskAssignees:
+    __tablename__ = 'task_assignees'
+
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{settings.POSTGRES_SCHEMA}.tasks.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    assignee_email: Mapped[str] = mapped_column(String(255),primary_key=True, index=True)
+    assigned_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
     )

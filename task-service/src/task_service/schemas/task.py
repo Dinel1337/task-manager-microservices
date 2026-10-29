@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 class TaskStatus(str, Enum):
     """Статусы задачи."""
@@ -46,6 +46,7 @@ class BaseTask(BaseModel):
     assignee: Optional[str] = None
     due_date: Optional[datetime] = None
 
+    assignees: Optional[list[str]] = Field(default_factory=list)
 
 class CreateTask(BaseTask):
     """Схема для создания задачи."""
@@ -68,6 +69,7 @@ class TaskSchema(BaseTask):
     created_by: str
     created_at: datetime
     updated_at: datetime
+    assignees: list[str] = Field(default_factory=list)
 
 
 
