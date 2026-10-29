@@ -24,13 +24,26 @@ class DeleteTaskUseCase:
         self._kafka_publisher = kafka_publisher
 
     @log(logger)
-    async def execute(self, task_id: int) -> None:
+    async def execute(self, task_id: int, deleted_by: str) -> None:
         """Удалить задачу по ID."""
         async with self._database.session() as session:
             # Получаем задачу перед удалением для события в Kafka
             task = await self._repository.get_one_task(session, task_id)
             await self._repository.delete_task(session, task_id)
+            await self._repository.save_history(
+                session=session,
+                task_id=task_id,
+                changed_by=deleted_by,
+                change_type="deleted",
+                changes={
+                    "title": {"old": task.title, "new": None},
+                    "status": {"old": task.status.value, "new": None},
+                    "priority": {"old": task.priority.value, "new": None},
+                    "assignee": {"old": task.assignee, "new": None},
+                },
+            )
 
+            
         # Удаляем из кэша
         await self._cache.delete_task(task_id)
 

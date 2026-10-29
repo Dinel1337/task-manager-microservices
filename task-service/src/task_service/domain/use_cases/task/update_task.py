@@ -10,6 +10,8 @@ from task_service.schemas.task import (
     TaskSchema,
     UpdateTask,
 )
+from task_service.domain.tasks.diff import compute_diff
+
 
 logger = get_logger(__name__)
 
@@ -42,8 +44,21 @@ class UpdateTaskUseCase:
         async with self._database.session() as session:
             # Получаем старую задачу для сравнения
             old_task = await self._repository.get_one_task(session, task_id)
-
             updated_task = await self._repository.update_task(session, task_id, task)
+
+            diff = compute_diff(
+                old=old_task.model_dump(),
+                new=updated_task.model_dump()
+                )
+
+            if diff:
+                await self._repository.save_history(
+                session=session,
+                task_id=task_id,
+                changed_by=updated_by,
+                change_type="update",
+                changes=diff,
+            )
 
         # Обновляем кэш
         await self._cache.delete_task(task_id)
