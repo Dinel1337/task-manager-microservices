@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, String, Text, func, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import JSONB
 
 from task_service.infrastructure.postgres.base import Base
 from task_service.core.config import settings
@@ -17,6 +18,7 @@ class Task(Base):
         String(50),
         default="todo",
         server_default="todo",
+        index=True
     )
     priority: Mapped[str] = mapped_column(
         String(50),
@@ -35,6 +37,18 @@ class Task(Base):
         onupdate=func.timezone("UTC", func.current_timestamp()),
     )
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+class TaskHistory(Base):
+    __tablename__ = 'task_history'
+    id : Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    changed_by: Mapped[str] = mapped_column(String(255), nullable=False)
+    change_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    changes: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
+    )
 
 class Comment(Base):
     __tablename__ = 'comments'

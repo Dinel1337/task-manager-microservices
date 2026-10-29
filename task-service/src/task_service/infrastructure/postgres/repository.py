@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from task_service.core.exceptions.tasks import TaskNotFoundException
 from task_service.core.logger import get_logger, log
-from task_service.infrastructure.postgres.models import Task, Comment
+from task_service.infrastructure.postgres.models import Task, TaskHistory ,Comment
+from task_service.schemas.history import TaskHistoryFilters, TaskHistorySchema
 from task_service.schemas.task import CreateTask, TaskFilters, TaskSchema, UpdateTask, TaskPriority, TaskStatus
 from task_service.schemas.comment import CommentCreate, CommentResponse
 
@@ -195,6 +196,47 @@ class TaskRepository:
         )
         result = await session.execute(query)
         return [TaskSchema.model_validate(obj) for obj in result.scalars().all()]
+
+    @log(logger)
+    async def save_history(
+        self,
+        session: AsyncSession,
+        task_id: int,
+        changed_by: str,
+        change_type: str,
+        changes: dict,
+    ) -> None:
+        """Записать изменение задачи в историю."""
+        session.add(TaskHistory(
+                task_id=task_id,
+                changed_by=changed_by,
+                change_type=change_type,
+                changes=changes,
+            )
+        )
+
+    @log(logger)
+    async def get_task_history(
+        self,
+        session: AsyncSession,
+        task_id: int,
+        filters: TaskHistoryFilters,
+    ) -> None:
+        """Записать изменение задачи в историю."""
+        query = (select(TaskHistory)
+                 .where(TaskHistory.task_id==task_id))
+
+        if filters.change_type:
+            query = query.where(TaskHistory.change_type==filters.change_type)
+        if filters.date_from:
+            query = query.where(TaskHistory.changed_at >= filters.date_from)
+        if filters.date_to:
+            query = query.where(TaskHistory.changed_at <= filters.date_to)
+
+        query = query.order_by(TaskHistory.changed_at.asc())
+
+        rows = await session.scalars(query)
+        return [TaskHistorySchema.model_validate(r) for r in rows.all()]
 
 class CommentRepository:
     """Репозиторий для работы с коментариями."""

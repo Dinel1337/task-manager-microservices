@@ -37,6 +37,20 @@ class CreateTaskUseCase:
         async with self._database.session() as session:
             created_task = await self._repository.create_task(session, task)
 
+            await self._repository.save_history(
+                session=session,
+                task_id=created_task.id,
+                changed_by=created_task.created_by,
+                change_type="created",
+                changes={
+                    "title": {"old": None, "new": created_task.title},
+                    "description": {"old": None, "new": created_task.description},
+                    "status": {"old": None, "new": created_task.status.value},
+                    "priority": {"old": None, "new": created_task.priority.value},
+                    "assignee": {"old": None, "new": created_task.assignee},
+                },
+            )
+        
         # Сохраняем в кэш
         await self._cache.set_task(created_task)
 

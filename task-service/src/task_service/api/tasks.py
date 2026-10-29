@@ -10,6 +10,7 @@ from task_service.domain.use_cases.task.create_task import CreateTaskUseCase
 from task_service.domain.use_cases.task.delete_task import DeleteTaskUseCase
 from task_service.domain.use_cases.task.get_tasks import GetTasksUseCase
 from task_service.domain.use_cases.task.update_task import UpdateTaskUseCase
+from task_service.domain.use_cases.task.get_task_history import GetTaskHistoryUseCase
 from task_service.schemas.api.pagination import Pagination
 from task_service.schemas.api.tasks import (
     CreateTaskRequestPayload,
@@ -19,6 +20,7 @@ from task_service.schemas.api.tasks import (
 )
 from task_service.schemas.auth import AccessTokenData
 from task_service.schemas.task import CreateTask, TaskFilters, UpdateTask
+from task_service.schemas.history import TaskHistorySchema, TaskHistoryFilters
 
 logger = get_logger(__name__)
 
@@ -121,9 +123,27 @@ async def update_task(
 async def delete_task(
     task_id: int,
     use_case: FromDishka[DeleteTaskUseCase],
+    current_user: AccessTokenData = Depends(get_current_user),
 ) -> None:
     """Удалить задачу по ID."""
     try:
-        await use_case.execute(task_id=task_id)
+        await use_case.execute(task_id=task_id, deleted_by=current_user.username)
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+@tasks_router.get(
+    "/{task_id}/history",
+    responses={404: {"description": "Task not found"}},
+)
+@inject
+@log(logger)
+async def get_task_history(
+    task_id: int,
+    use_case: FromDishka[GetTaskHistoryUseCase],
+    filters: TaskHistoryFilters = Depends()
+) -> list[TaskHistorySchema]:
+    "Получить аудит задачи"
+    try:
+        return await use_case.execute(task_id,filters)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
