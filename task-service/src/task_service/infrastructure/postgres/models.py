@@ -39,8 +39,8 @@ class Task(Base):
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
 
-    assignees: Mapped[list["TaskAssignee"]] = relationship(
-        "TaskAssignee",
+    assignees: Mapped[list["TaskAssignees"]] = relationship(
+        "TaskAssignees",
         cascade="all, delete-orphan",
         lazy="selectin"
     )
@@ -79,7 +79,7 @@ class Comment(Base):
         onupdate=func.timezone("UTC", func.current_timestamp()),
     )
 
-class TaskAssignees:
+class TaskAssignees(Base):
     __tablename__ = 'task_assignees'
 
     task_id: Mapped[int] = mapped_column(

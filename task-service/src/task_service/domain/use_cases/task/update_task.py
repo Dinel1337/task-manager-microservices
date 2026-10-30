@@ -64,25 +64,29 @@ class UpdateTaskUseCase:
         await self._cache.delete_task(task_id)
         await self._cache.set_task(updated_task)
 
+
         # Определяем тип события
         event_type = TaskEventType.UPDATED
         if task.status and old_task.status != task.status:
             event_type = TaskEventType.STATUS_CHANGED
-        elif task.assignee and old_task.assignee != task.assignee:
+        elif task.assignees is not None and set(old_task.assignees) != set(updated_task.assignees):
             event_type = TaskEventType.ASSIGNED
 
+        recipients = updated_task.assignees or ([updated_task.assignee] if updated_task.assignee else [])
+
         # Отправляем уведомление в RabbitMQ (для нотификаций)
-        notification = TaskNotificationMessage(
-            task_id=updated_task.id,
-            event_type=event_type,
-            task_title=updated_task.title,
-            task_description=updated_task.description,
-            assignee=updated_task.assignee,
-            status=updated_task.status,
-            priority=updated_task.priority,
-            created_by=updated_by,
-        )
-        await self._publisher.publish_task_notification(notification)
+        for recipient in recipients:
+            notification = TaskNotificationMessage(
+                task_id=updated_task.id,
+                event_type=event_type,
+                task_title=updated_task.title,
+                task_description=updated_task.description,
+                assignee=recipient,
+                status=updated_task.status,
+                priority=updated_task.priority,
+                created_by=updated_by,
+            )
+            await self._publisher.publish_task_notification(notification)
 
         # Отправляем событие в Kafka (для аналитики)
         await self._kafka_publisher.publish_task_event(updated_task, event_type)

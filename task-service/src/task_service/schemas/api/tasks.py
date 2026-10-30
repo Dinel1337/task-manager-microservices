@@ -40,6 +40,8 @@ class CreateTaskRequestPayload(BaseModel):
     assignee: Optional[str] = Field(None, max_length=100, description="Исполнитель")
     due_date: Optional[datetime] = Field(None, description="Срок выполнения")
 
+    assignees: list[str] = Field(default_factory=list)
+
 
 class UpdateTaskRequestPayload(BaseModel):
     """Payload для обновления задачи."""

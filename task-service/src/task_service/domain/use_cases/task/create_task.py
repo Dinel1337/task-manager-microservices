@@ -54,18 +54,21 @@ class CreateTaskUseCase:
         # Сохраняем в кэш
         await self._cache.set_task(created_task)
 
+        recipients = created_task.assignees or ([created_task.assignee] if created_task.assignee else [])
+        
         # Отправляем уведомление в RabbitMQ (для нотификаций)
-        notification = TaskNotificationMessage(
-            task_id=created_task.id,
-            event_type=TaskEventType.CREATED,
-            task_title=created_task.title,
-            task_description=created_task.description,
-            assignee=created_task.assignee,
-            status=created_task.status,
-            priority=created_task.priority,
-            created_by=created_task.created_by,
-        )
-        await self._publisher.publish_task_notification(notification)
+        for recipient in recipients:
+            notification = TaskNotificationMessage(
+                task_id=created_task.id,
+                event_type=TaskEventType.CREATED,
+                task_title=created_task.title,
+                task_description=created_task.description,
+                assignee=recipient,
+                status=created_task.status,
+                priority=created_task.priority,
+                created_by=created_task.created_by,
+            )
+            await self._publisher.publish_task_notification(notification)
 
         # Отправляем событие в Kafka (для аналитики)
         await self._kafka_publisher.publish_task_event(created_task, TaskEventType.CREATED)
