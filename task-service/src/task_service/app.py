@@ -4,6 +4,7 @@ from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from task_service.api.middleware.rate_limit import RateLimitMiddleware
 from task_service.api.health_check.health_check_router import health_check_router
 from task_service.api.metrics import metrics_router
 from task_service.api.tasks import tasks_router
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -45,6 +47,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    
 
     # Роутеры
     app.include_router(statistic_router, prefix="/api/v1", tags=["Statistic"])

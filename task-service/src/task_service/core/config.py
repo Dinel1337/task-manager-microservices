@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     PORT: int = 8000
     ROOT_PATH: str = ""
+    RATE_LIMIT_REQUESTS:int =5
+    RATE_LIMIT_WINDOW: int = 60
 
     # PostgreSQL
     POSTGRES_HOST: str

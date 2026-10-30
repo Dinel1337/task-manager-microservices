@@ -22,10 +22,12 @@ class TaskRepository:
 
     def _task_to_schema(self, task: Task) -> TaskSchema:
         """Конвертировать ORM-модель в Pydantic-схему, развернув assignees в list[str]."""
-        schema = TaskSchema.model_validate(task)
-
-        schema.assignees = [a.assignee_email for a in task.assignees]
-        return schema
+        
+        data = {column.name: getattr(task, column.name) for column in task.__table__.columns}
+        
+        data["assignees"] = [a.assignee_email for a in task.assignees] if task.assignees else []
+        
+        return TaskSchema.model_validate(data)
     
     async def _sync_assignees(
         self,
