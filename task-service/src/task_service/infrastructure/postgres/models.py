@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func, ForeignKey, Integer
+from sqlalchemy import DateTime, String, Text, func, ForeignKey, Integer, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 
 from task_service.infrastructure.postgres.base import Base
 from task_service.core.config import settings
@@ -38,6 +38,11 @@ class Task(Base):
     )
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
+    search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True, deferred=True)
+    __table_args__ = (
+        Index('idx_tasks_search', 'search_vector', postgresql_using='gin'),
+        {"schema": settings.POSTGRES_SCHEMA},
+    )
 
     assignees: Mapped[list["TaskAssignees"]] = relationship(
         "TaskAssignees",

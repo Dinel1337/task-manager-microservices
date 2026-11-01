@@ -23,7 +23,9 @@ class TaskRepository:
     def _task_to_schema(self, task: Task) -> TaskSchema:
         """Конвертировать ORM-модель в Pydantic-схему, развернув assignees в list[str]."""
         
-        data = {column.name: getattr(task, column.name) for column in task.__table__.columns}
+        data = {column.name: getattr(task, column.name) 
+                for column in task.__table__.columns
+                if column.name != "search_vector"}
         
         data["assignees"] = [a.assignee_email for a in task.assignees] if task.assignees else []
         
@@ -172,11 +174,9 @@ class TaskRepository:
         filters_list = []
 
         if filters.search:
-            search_pattern = f"%{filters.search}%"
             filters_list.append(
-                or_(
-                    self._tasks_collection.title.ilike(search_pattern),
-                    self._tasks_collection.description.ilike(search_pattern),
+                self._tasks_collection.search_vector.op('@@')(
+                    func.plainto_tsquery('russian', filters.search)
                 )
             )
 
