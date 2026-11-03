@@ -10,9 +10,11 @@ from task_notification.domain.use_cases.get_notification_by_id import GetNotific
 from task_notification.domain.use_cases.get_notifications import GetNotificationsUseCase
 from task_notification.domain.use_cases.send_pending_notifications import SendPendingNotificationsUseCase
 from task_notification.domain.use_cases.update_notification_status import UpdateNotificationStatusUseCase
+from task_notification.domain.use_cases.create_telegram_user import CreateTelegramUserUseCase
 from task_notification.infrastructure.email.email_service import EmailService
 from task_notification.infrastructure.postgres.database import Database
 from task_notification.infrastructure.postgres.repository import NotificationRepository
+from task_notification.infrastructure.telegram.service import TelegramService
 
 
 # Config container для RabbitMQ
@@ -42,6 +44,11 @@ class ServiceProvider(Provider):
     def get_email_service(self) -> EmailService:
         return EmailService()
 
+    @provide(scope=Scope.APP)
+    async def get_telegram_service(self) -> AsyncIterator[TelegramService]:
+        service = TelegramService()
+        yield service
+        await service.close()  
 
 class UseCaseProvider(Provider):
     scope = Scope.REQUEST
@@ -84,8 +91,17 @@ class UseCaseProvider(Provider):
         database: Database,
         repository: NotificationRepository,
         email_service: EmailService,
+        telega: TelegramService
     ) -> SendPendingNotificationsUseCase:
-        return SendPendingNotificationsUseCase(database, repository, email_service)
+        return SendPendingNotificationsUseCase(database, repository, email_service, telega)
+
+    @provide
+    def get_telegram_user(
+        self,
+        database: Database,
+        repository: NotificationRepository,
+    ) -> CreateTelegramUserUseCase:
+        return CreateTelegramUserUseCase(database, repository)
 
 
 class MetricsProvider(Provider):

@@ -3,12 +3,13 @@
 import json
 from typing import Optional
 
-from task_notification.core.exceptions.notifications import NotificationSendError
 from task_notification.core.logger import get_logger, log
 from task_notification.infrastructure.email.email_service import EmailService
+from task_notification.infrastructure.telegram.service import TelegramService
 from task_notification.infrastructure.postgres.database import Database
 from task_notification.infrastructure.postgres.repository import NotificationRepository
 from task_notification.schemas.notification import NotificationSchema, NotificationStatus
+from task_notification.core.text import build_text
 
 logger = get_logger(__name__)
 
@@ -21,10 +22,12 @@ class SendPendingNotificationsUseCase:
         database: Database,
         repository: NotificationRepository,
         email_service: EmailService,
+        telegram_service: TelegramService,
     ):
         self._database = database
         self._repository = repository
         self._email_service = email_service
+        self._telegram_service = telegram_service
 
     @log(logger)
     async def execute(self) -> dict:
@@ -98,3 +101,12 @@ class SendPendingNotificationsUseCase:
             task_priority=task_priority,
         )
 
+        async with self._database.session() as session:
+            user_tg = await self._repository.get_by_email(
+                session, notification.recipient,
+            )
+        if user_tg:
+            await self._telegram_service.send_task_notification(
+                chat_id=user_tg.telegram_id,
+                text=build_text(notification),
+            )

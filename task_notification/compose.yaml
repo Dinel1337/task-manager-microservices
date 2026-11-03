@@ -38,6 +38,25 @@ services:
     pull_policy: build
     command: ["arq", "arq_worker.WorkerSettings"]
 
+  telegram-bot:
+    container_name: telegram-bot
+    image: task-notification:latest
+    platform: linux/amd64
+    volumes:
+      - ./src:/app/src
+    env_file:
+      - env/task-notification.env
+      - env/postgres.env
+      - env/rabbitmq.env
+      - env/redis.env
+    networks:
+      - tasks
+    build:
+      context: .
+    pull_policy: build
+    command: ["python", "src/telegram_bot.py"]
+    restart: unless-stopped
+
 networks:
   tasks:
     external: true

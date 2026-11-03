@@ -1,17 +1,19 @@
 from datetime import datetime
-from typing import Type
+from typing import Type, Optional
 
 from sqlalchemy import and_, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from task_notification.core.exceptions.notifications import NotificationNotFoundException
 from task_notification.core.logger import get_logger, log
-from task_notification.infrastructure.postgres.models import Notification
+from task_notification.infrastructure.postgres.models import Notification, UserTelegram
 from task_notification.schemas.notification import (
     CreateNotification,
     NotificationFilters,
     NotificationSchema,
     NotificationStatus,
+    CreateUserTelegram,
+    UserTelegramInBase
 )
 
 logger = get_logger(__name__)
@@ -21,6 +23,7 @@ class NotificationRepository:
     """Репозиторий для работы с уведомлениями."""
 
     _notifications_collection: Type[Notification] = Notification
+    _telega_collection: Type[UserTelegram] = UserTelegram
 
     @log(logger)
     async def get_one_notification(
@@ -196,3 +199,26 @@ class NotificationRepository:
         result = await session.execute(query)
         notifications = result.scalars().all()
         return [NotificationSchema.model_validate(n) for n in notifications]
+
+    @log(logger)
+    async def save_user_telegram(
+        self,
+        session: AsyncSession,
+        data: CreateUserTelegram) -> UserTelegramInBase:
+
+        values = data.model_dump()
+        query = insert(self._telega_collection).values(values).returning(self._telega_collection)
+        result = await session.scalar(query) 
+        return UserTelegramInBase.model_validate(result)
+
+    @log(logger)
+    async def get_by_email(
+        self,
+        session: AsyncSession,
+        email: str,
+    ) -> UserTelegramInBase | None:
+        query = select(self._telega_collection).where(
+            self._telega_collection.email == email
+        )
+        result = await session.scalar(query)
+        return UserTelegramInBase.model_validate(result) if result else None

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, func, VARCHAR, BIGINT
 from sqlalchemy.orm import Mapped, mapped_column
 
 from task_notification.infrastructure.postgres.base import Base
@@ -30,3 +30,14 @@ class Notification(Base):
         server_default=func.timezone("UTC", func.current_timestamp()),
     )
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+class UserTelegram(Base):
+    __tablename__ = "user_telegram"
+    
+    email: Mapped[str] = mapped_column(VARCHAR(255), primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(BIGINT, nullable=False, unique=True)
+    telegram_username: Mapped[str] = mapped_column(VARCHAR(255))
+    registered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.timezone("UTC", func.current_timestamp()),
+    )

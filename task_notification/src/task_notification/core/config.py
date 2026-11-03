@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     PORT: int = 8001
     ROOT_PATH: str = ""
+    BOT_TOKEN:SecretStr =""
+    TELEGRAM_ENABLED:bool=True
 
     # PostgreSQL
     POSTGRES_HOST: str

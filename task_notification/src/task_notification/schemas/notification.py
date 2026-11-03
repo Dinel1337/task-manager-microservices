@@ -11,6 +11,9 @@ class NotificationStatus(str, Enum):
     PENDING = "pending"
     SENT = "sent"
     FAILED = "failed"
+    EMAIL = 'email'
+    telegram = 'telegram'
+    both = 'both'
 
 
 class NotificationType(str, Enum):
@@ -81,3 +84,18 @@ class TaskNotificationMessage(BaseModel):
     status: str
     priority: str
     created_by: str
+
+
+class CreateUserTelegram(BaseModel):
+    """Базовая схема валидации сообщения из телеграм"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    email: str
+    telegram_id: int
+    telegram_username: Optional[str]
+
+class UserTelegramInBase(CreateUserTelegram):
+    """Схема возврата бд"""
+
+    registered_at: datetime

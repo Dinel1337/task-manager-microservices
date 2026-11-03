@@ -19,8 +19,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Добавляем виртуальную колонку search_vector
-    # coalesce нужен, чтобы если description = NULL, конкатенация не сломалась
     op.execute(f"""
         ALTER TABLE {settings.POSTGRES_SCHEMA}.tasks
         ADD COLUMN search_vector tsvector
@@ -29,7 +27,6 @@ def upgrade() -> None:
         ) STORED;
     """)
 
-    # 2. Создаем GIN-индекс для быстрого поиска 
     op.execute(f"""
         CREATE INDEX idx_tasks_search 
         ON {settings.POSTGRES_SCHEMA}.tasks 
@@ -37,7 +34,6 @@ def upgrade() -> None:
     """)
 
 def downgrade() -> None:
-    # Откатываем изменения
     op.execute(f"DROP INDEX IF EXISTS {settings.POSTGRES_SCHEMA}.idx_tasks_search;")
     op.execute(f"ALTER TABLE {settings.POSTGRES_SCHEMA}.tasks DROP COLUMN IF EXISTS search_vector;")
 
