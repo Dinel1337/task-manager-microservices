@@ -1,5 +1,8 @@
 import logging
 import sys
+import json
+
+from datetime import datetime
 from functools import wraps
 from typing import Any, Awaitable, Callable, TypeVar, Union
 
@@ -18,12 +21,23 @@ RESET_COLOR = "\033[0m"
 FuncType = TypeVar("FuncType", bound=Callable[..., Union[Any, Awaitable[Any]]])
 
 
-class ColoredFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:
-        log_color = LOG_COLORS.get(record.levelno, "")
-        record.msg = f"{log_color}{record.msg}{RESET_COLOR}"
-        return super().format(record)
+# class ColoredFormatter(logging.Formatter):
+#     def format(self, record: logging.LogRecord) -> str:
+#         log_color = LOG_COLORS.get(record.levelno, "")
+#         record.msg = f"{log_color}{record.msg}{RESET_COLOR}"
+#         return super().format(record)
 
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "time": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if hasattr(record, "task_id"):
+            log_record["task_id"] = record.task_id
+        return json.dumps(log_record)
 
 def is_coroutine_function(func: Callable[..., Any]) -> bool:
     return bool(func.__code__.co_flags & 0x80)
@@ -44,7 +58,7 @@ def setup_logging() -> None:
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
     console_handler.setFormatter(
-        ColoredFormatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
+        JsonFormatter()
     )
     root_logger.addHandler(console_handler)
 
