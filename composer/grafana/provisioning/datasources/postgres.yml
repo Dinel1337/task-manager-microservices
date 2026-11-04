@@ -1,0 +1,20 @@
+apiVersion: 1
+
+datasources:
+  - name: TaskManagerDB
+    type: postgres
+    uid: TaskManagerDB
+    url: postgres:5432
+    database: postgres
+    user: postgres
+    secureJsonData:
+      password: postgres
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 0
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: false
+    isDefault: false
+    editable: true
