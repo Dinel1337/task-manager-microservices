@@ -21,6 +21,7 @@ from task_service.infrastructure.postgres.repository import TaskRepository, Comm
 from task_service.infrastructure.rabbitmq.broker import broker
 from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
 from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.redis.publisher import RedisWebSocketPublisher
 from task_service.infrastructure.kafka.publisher import KafkaPublisher
 
 
@@ -47,6 +48,18 @@ class InfrastructureProvider(Provider):
         )
         yield redis
         await redis.aclose()
+
+    @provide
+    async def get_redis_websocket(self) -> AsyncIterator[Redis]:
+        redis = Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
+            username=settings.REDIS_USERNAME,
+            password=settings.REDIS_PASSWORD,
+        )
+        yield redis
+        await redis.aclose() 
 
     @provide
     async def get_kafka_publisher(self) -> AsyncIterator[KafkaPublisher]:
@@ -83,6 +96,10 @@ class ServiceProvider(Provider):
     def get_rabbitmq_publisher(self, broker: RabbitBroker) -> RabbitMQPublisher:
         return RabbitMQPublisher(broker)
 
+    @provide
+    def get_redis_websocket_publisher(self) -> RedisWebSocketPublisher:
+        return RedisWebSocketPublisher()
+
 
 class UseCaseProvider(Provider):
     scope = Scope.REQUEST
@@ -95,8 +112,9 @@ class UseCaseProvider(Provider):
         publisher: RabbitMQPublisher,
         cache: RedisRepository,
         kafka_publisher: KafkaPublisher,
+        ws_publisher:RedisWebSocketPublisher
     ) -> CreateTaskUseCase:
-        return CreateTaskUseCase(database, repository, publisher, cache, kafka_publisher)
+        return CreateTaskUseCase(database, repository, publisher, cache, kafka_publisher, ws_publisher)
 
     @provide
     def get_get_tasks(

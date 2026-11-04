@@ -3,6 +3,7 @@ from task_service.infrastructure.postgres.database import Database
 from task_service.infrastructure.postgres.repository import TaskRepository
 from task_service.infrastructure.rabbitmq.publisher import RabbitMQPublisher
 from task_service.infrastructure.redis.repository import RedisRepository
+from task_service.infrastructure.redis.publisher import RedisWebSocketPublisher
 from task_service.infrastructure.kafka.publisher import KafkaPublisher
 from task_service.schemas.task import (
     CreateTask,
@@ -24,12 +25,15 @@ class CreateTaskUseCase:
         publisher: RabbitMQPublisher,
         cache: RedisRepository,
         kafka_publisher: KafkaPublisher,
+        ws_publisher: RedisWebSocketPublisher,
+        
     ):
         self._database = database
         self._repository = repository
         self._publisher = publisher
         self._cache = cache
         self._kafka_publisher = kafka_publisher
+        self._ws_publisher = ws_publisher
 
     @log(logger)
     async def execute(self, task: CreateTask) -> TaskSchema:
@@ -72,6 +76,15 @@ class CreateTaskUseCase:
 
         # Отправляем событие в Kafka (для аналитики)
         await self._kafka_publisher.publish_task_event(created_task, TaskEventType.CREATED)
+
+        task_data = created_task.model_dump(mode="json") 
+        
+        for recipient in recipients:
+            await self._ws_publisher.publish_event(
+                event_type="task.created",
+                task_data=task_data,
+                target_assignee=recipient,
+            )
 
         logger.info(f"Task created: id={created_task.id}, title={created_task.title}")
         return created_task

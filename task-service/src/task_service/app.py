@@ -1,3 +1,5 @@
+import asyncio
+
 from contextlib import asynccontextmanager
 
 from dishka.integrations.fastapi import setup_dishka
@@ -11,6 +13,7 @@ from task_service.api.tasks import tasks_router
 from task_service.api.statistic import statistic_router
 from task_service.api.comments import comments_router
 from task_service.api.export import csv_router
+from task_service.api.ws import router as ws_router, listen_to_redis
 from task_service.core.config import settings
 from task_service.core.providers.setup import container
 from task_service.domain.metrics.registry_metrics import setup_metrics
@@ -21,7 +24,11 @@ from task_service.infrastructure.rabbitmq.broker import broker
 async def lifespan(app: FastAPI):
     """Lifespan для подключения/отключения RabbitMQ broker."""
     await broker.connect()
+
+    redis_task = asyncio.create_task(listen_to_redis())
     yield
+    redis_task.cancel()
+    
     await broker.close()
 
 
@@ -53,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(statistic_router, prefix="/api/v1", tags=["Statistic"])
     app.include_router(csv_router, prefix="/api/v1", tags=["Export"])
     app.include_router(comments_router, prefix="/api/v1", tags=["Comments"])
+    app.include_router(ws_router, prefix="/api/v1")
     
     app.include_router(tasks_router, prefix="/api/v1", tags=["Tasks"])
     app.include_router(health_check_router)

@@ -1,11 +1,11 @@
 aio-pika==9.6.2
-arq>=0.26.0
 aiocsv==1.4.1
 aiokafka==0.11.0
 aiormq==6.9.4
 alembic==1.13.3
 annotated-types==0.8.0
 anyio==4.15.1
+arq==0.28.0
 async-timeout==5.0.1
 asyncpg==0.29.0
 certifi==2026.10.23
@@ -16,6 +16,7 @@ fastapi==0.115.0
 faststream==0.5.28
 greenlet==3.1.1
 h11==0.16.0
+hiredis==3.5.0
 httpcore==1.0.9
 httpx==0.27.2
 idna==3.20
@@ -42,4 +43,5 @@ starlette==0.38.6
 tenacity==8.2.3
 typing-extensions==4.16.0
 uvicorn==0.30.6
+websockets==17.4
 yarl==1.25.1

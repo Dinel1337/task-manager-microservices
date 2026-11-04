@@ -22,6 +22,11 @@ greenlet = "^3.1.1"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[dependency-groups]
+dev = [
+    "websockets>=17.4",
+]
+
 [tool.black]
 line-length = 100
 target-version = ['py311']
