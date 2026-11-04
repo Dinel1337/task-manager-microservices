@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 venv/
 .venv/
 ENV/
@@ -17,7 +16,6 @@ ENV/
 
 # Environment
 
-*.env.local
 
 # Docker
 *.log

@@ -23,7 +23,6 @@ wheels/
 # Virtual environments
 venv/
 ENV/
-env/
 
 # IDEs
 .vscode/
@@ -33,8 +32,7 @@ env/
 *~
 
 # Environment
-.env
-.env.local
+
 
 # Testing
 .pytest_cache/
